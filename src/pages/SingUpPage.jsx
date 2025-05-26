@@ -1,0 +1,176 @@
+import { useState } from "react";
+import { useAuthStore } from "../store/useAuthStore";
+import { MessageSquare, User, Mail, Lock, Eye, EyeOff  } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import AuthImagePattern from "../components/AuthImagePattern.jsx";
+import toast from "react-hot-toast";
+export const SingUpPage = () => {
+  const [showPassword, setShowPassword] = useState(false);  
+  const [formData, setFormData] = useState({
+    name: "",
+    email:"",
+    password:"",
+  })
+
+  const {signup, isSigningUp} = useAuthStore();
+
+  const validateForm = () => {
+    if(!formData.name.trim()) {
+      return toast.error("Full name is required");
+    }
+    if(!formData.email.trim()) {
+      return toast.error("Email is required");
+    }
+    if(!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email)) {
+      return toast.error("Email is not valid");
+    }
+    if(!formData.password.trim()) {
+      return toast.error("Password is required");
+    }
+    if(formData.password.length < 6) {
+      return toast.error("Password must be at least 6 characters");
+    }
+
+    return true;
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const success = validateForm();
+
+    if(success === true){
+      signup(formData)
+    }
+  }
+  return (
+    <div className="min-h-screen grid lg:grid-cols-2">
+
+      {/* Left side */}
+      <div className="flex flex-col justify-center items-center p-6 sm:p-12">
+
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center mb-8">
+            <div className="flex flex-col items-center gap-2 group">
+              <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                <MessageSquare className="size-6 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold mt-2">
+                Create Account
+              </h1>
+              <p className="text-base-content/60">
+                Create an account to get started
+              </p>
+            </div>
+          </div>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-6 w-100 mb-5">
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text font-medium">
+                Name
+              </span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                <User className="size-5 text-base-content/40" />
+              </div>
+              <input 
+                type="text" 
+                className={`input input-bordered w-full pl-10`}
+                placeholder="Nghi61" 
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text font-medium">
+                Email
+              </span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                <Mail className="size-5 text-base-content/40" />
+              </div>
+              <input 
+                type="email" 
+                className={`input input-bordered w-full pl-10`}
+                placeholder="Nghi@gmail.com" 
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text font-medium">
+                Password
+              </span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                <Lock className="size-5 text-base-content/40" />
+              </div>
+              <input 
+                type={showPassword ? "text" : "password"} 
+                className={`input input-bordered w-full pl-10`}
+                placeholder="123456789" 
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+              />
+              <button
+               type="button"
+               className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setShowPassword(!showPassword)}
+              > 
+                {showPassword ? (
+                  <EyeOff className="size-5 text-base-content/40" />
+                ) : (
+                  <Eye className="size-5 text-base-content/40" />
+                )}
+                
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit" className="btn btn-primary w-full" disabled={isSigningUp}
+          >
+            {isSigningUp ? (
+              <>
+              <Loader2 className="size-5 animate-spin" />
+              Loding...
+              </>
+            ) : (
+              "Create Account"
+            )}
+          </button>
+        </form>
+        <div className="text-center">
+            <p className="text-base-content/60">
+              Already have an account ? 
+              <Link to="/login" className="ml-1 link link-primary">
+                Login
+              </Link>
+            </p>
+
+          </div>
+      </div>
+
+
+      {/* Right side */}
+      <AuthImagePattern 
+      title="This is Personal Project"
+      subtitle="This is a personal project to learn and practice React, Tailwind CSS, and Firebase. It is not intended for production use."
+      />
+
+    </div>
+  )
+}
+
+export default SingUpPage
