@@ -12,7 +12,15 @@ const page =
   async () => ({ Component: (await load())[name] as ComponentType });
 
 const memberRoutes = (base: string): RouteObject[] => [
-  { index: true, lazy: page(() => import("@/features/legacy/LegacyChatPage"), "LegacyChatPage") },
+  {
+    lazy: page(() => import("@/features/conversations/ChatsLayout"), "ChatsLayout"),
+    children: [
+      { index: true, lazy: page(() => import("@/features/conversations/ChatsLayout"), "NoChatSelected") },
+      { path: "c/:conversationId", lazy: page(() => import("@/features/conversations/ChatView"), "ChatView") },
+    ],
+  },
+  // API cũ (/api/messages/*) – giữ tới khi E2E xác nhận Conversations tương đương (Phase 7)
+  { path: "legacy", lazy: page(() => import("@/features/legacy/LegacyChatPage"), "LegacyChatPage") },
   {
     path: "settings",
     lazy: page(() => import("@/features/account/SettingsLayout"), "SettingsLayout"),

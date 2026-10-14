@@ -10,6 +10,8 @@ export default defineConfig((env) =>
       include: ["src/**/*.test.{ts,tsx}"],
       css: false,
       restoreMocks: true,
+      // Máy dev chạy kèm Docker/Vite: giới hạn worker để fork không quá thời gian khởi động
+      maxWorkers: 4,
     },
   }),
 );

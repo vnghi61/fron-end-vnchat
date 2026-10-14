@@ -109,11 +109,10 @@ export function emitWithAck<E extends keyof ClientEvents>(
   const s = socket;
   if (!s?.connected) return Promise.resolve({ ok: false, code: "OFFLINE" });
   return new Promise((resolve) => {
-    const emit = s.timeout(ACK_TIMEOUT_MS).emit as unknown as (
-      e: E,
-      p: Parameters<ClientEvents[E]>[0],
-      cb: (err: Error | null, res: Ack) => void,
-    ) => void;
-    emit(event, payload, (err, res) => resolve(err ? { ok: false, code: "TIMEOUT" } : res));
+    // Gọi như method (giữ `this`) – timeout() trả về một emitter tạm có ack kiểu (err, res).
+    const timed = s.timeout(ACK_TIMEOUT_MS) as unknown as {
+      emit: (e: E, p: Parameters<ClientEvents[E]>[0], cb: (err: Error | null, res: Ack) => void) => void;
+    };
+    timed.emit(event, payload, (err, res) => resolve(err ? { ok: false, code: "TIMEOUT" } : res));
   });
 }

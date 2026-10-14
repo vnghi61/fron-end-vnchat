@@ -5,7 +5,7 @@ import { useBranding, useSession } from "@/core/auth/session";
 import { cn } from "@/core/lib/cn";
 import { CountBadge, Tooltip } from "@/core/ui/components";
 import { useContainerSize, type PaneSize } from "@/core/ui/hooks";
-import { AccountMenu } from "./AccountMenu";
+import { AccountMenu } from "@/features/account/AccountMenu";
 import { ConnectionBanner } from "./ConnectionBanner";
 import { isNavActive, NAV_ITEMS } from "./nav";
 import { ShellContext, type ShellInfo, type ShellVariant } from "@/core/ui/shell";

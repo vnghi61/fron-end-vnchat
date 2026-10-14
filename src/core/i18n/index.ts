@@ -23,6 +23,7 @@ void i18n.use(initReactI18next).init({
   fallbackLng: "vi",
   interpolation: { escapeValue: false },
   returnNull: false,
+  showSupportNotice: false,
 });
 
 document.documentElement.lang = i18n.language;
