@@ -1,2 +1,86 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@import "@fontsource/be-vietnam-pro/vietnamese-400.css";
+@import "@fontsource/be-vietnam-pro/vietnamese-500.css";
+@import "@fontsource/be-vietnam-pro/vietnamese-600.css";
+@import "@fontsource/be-vietnam-pro/latin-400.css";
+@import "@fontsource/be-vietnam-pro/latin-500.css";
+@import "@fontsource/be-vietnam-pro/latin-600.css";
+@import "./core/ui/styles/tokens.css";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant coarse (@media (pointer: coarse));
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: var(--app-height, 100dvh);
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+
+  /* Ô nhập 16px để iOS không tự zoom khi focus */
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+@utility safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility safe-x {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}

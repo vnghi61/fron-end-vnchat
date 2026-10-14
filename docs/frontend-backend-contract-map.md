@@ -135,6 +135,7 @@ trang đầu inbox (xem B1, B5).
 | B10 | Upload phụ thuộc Cloudinary; chưa cấu hình → `features.uploads=false` | `cloudinaryConfigured()` | ẩn nút đính kèm, ảnh đại diện chỉ đổi bằng URL; môi trường dev không có Cloudinary không test được upload thật (unit test với XHR giả) | – |
 | B11 | Danh sách admin users / audit không có tổng số, audit không lọc theo thời gian | controller | phân trang "Tải thêm", không hiển thị tổng | `total`, `from/to` |
 | B12 | `message.deleted` không kèm `deletedAt` | realtime.md | dùng giờ nhận event | thêm `deletedAt` |
+| B14 | OpenAPI thiếu vài field serializer thật có trả: `support.customer.contactEmail`, `Message.deletedBy`, `Conversation.peer` khai là `UserBrief` nhưng có thể `null`; bootstrap `branding`/`limits`, admin settings/webhook/api-key/audit chỉ mô tả bằng chữ | `lib/serializers.js`, `controller/admin.controller.js` | `src/core/api/types.ts` khai theo serializer và ghi nguồn; `contract-check.ts` chỉ cho phép field có trong OpenAPI ở các schema đã khai (field ngoài OpenAPI phải nằm trong kiểu lồng, có chú thích) | bổ sung schema vào `api/openapi.yaml` |
 | B13 | Không có contract cho: gọi audio/video, push notification, SSO Google/Microsoft/Apple, upload chunk/resume, quản trị nhiều tenant, quản lý task ngoài lệnh `/task` | không có route/event | **không hiển thị** các tính năng này (không nút giả, không "sắp ra mắt") | cần thiết kế contract mới |
 
 ## 7. Lộ trình bỏ API cũ
