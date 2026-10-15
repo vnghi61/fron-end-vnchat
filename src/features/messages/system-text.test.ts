@@ -35,6 +35,24 @@ describe("systemText", () => {
   });
 });
 
+describe("systemText – người đã rời hội thoại", () => {
+  const ticket = conversation({ kind: "support", members: [member(ME, "Khách")] });
+  const transferred = message({
+    type: "system",
+    metadata: { kind: "support.transferred", fromAgentId: PEER, toAgentId: OTHER },
+  });
+
+  it("dùng tên đã tải được cho nhân viên không còn trong members", () => {
+    expect(systemText(transferred, ticket, {}, { [OTHER]: "Lê Văn Cường" })).toBe(
+      "Cuộc trò chuyện được chuyển cho Lê Văn Cường",
+    );
+  });
+
+  it('không biết tên (khách widget) → câu chung, không hiện "Ai đó"', () => {
+    expect(systemText(transferred, ticket, {})).toBe("Cuộc trò chuyện được chuyển cho nhân viên khác");
+  });
+});
+
 describe("previewText", () => {
   const last = (over = {}) => ({
     id: "m1",

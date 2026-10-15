@@ -1,5 +1,6 @@
 import { io, type Socket } from "socket.io-client";
 import { create } from "zustand";
+import { transport } from "@/core/api/transport";
 import { config } from "@/core/config";
 import type { Ack, ClientEvents, ServerEventName, ServerEvents, ServerPayload } from "./events";
 
@@ -33,7 +34,7 @@ export function connectSocket(options: { token: string | null } & Hooks) {
   useConnection.setState({ state: "connecting", readyCount: 0, lastReadyAt: null });
 
   const s: AppSocket = io(config.apiUrl || undefined, {
-    withCredentials: true,
+    withCredentials: transport.cookies(),
     auth: options.token ? { token: options.token } : undefined,
     transports: ["websocket", "polling"],
     reconnectionDelay: 1000,

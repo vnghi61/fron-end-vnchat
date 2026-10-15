@@ -103,6 +103,11 @@ export function patchConversation(
 export function removeConversation(qc: QueryClient, id: Id) {
   qc.removeQueries({ queryKey: qk.conversation(id) });
   qc.removeQueries({ queryKey: qk.messages(id) });
+  removeFromLists(qc, id);
+}
+
+/** Bỏ khỏi các danh sách inbox nhưng giữ bản chi tiết + tin (vd. nhân viên vừa chuyển yêu cầu, vẫn đang xem). */
+export function removeFromLists(qc: QueryClient, id: Id) {
   for (const query of qc.getQueryCache().findAll({ queryKey: qk.conversationsAll })) {
     qc.setQueryData<ConversationList>(query.queryKey, (data) =>
       data ? { ...data, pages: data.pages.map((p) => ({ ...p, items: p.items.filter((c) => c._id !== id) })) } : data,

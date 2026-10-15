@@ -12,6 +12,7 @@ import { registerTypingHandlers } from "@/features/messages/typing";
 import { registerPresenceHandlers, resetPresence } from "@/features/people/presence";
 import { registerPollHandlers } from "@/features/polls/api";
 import { registerReminderHandlers } from "@/features/reminders/api";
+import { registerSupportHandlers } from "@/features/support/api";
 import { toast } from "@/core/ui/toast";
 
 // Ghép socket + các nhóm handler (lớp app được phép import cả core lẫn features). Một lần cho mỗi phiên đăng nhập.
@@ -64,6 +65,7 @@ export function startRealtime(queryClient: QueryClient): () => void {
     registerPresenceHandlers(),
     registerPollHandlers(queryClient),
     registerReminderHandlers(queryClient, notifyReminder),
+    registerSupportHandlers(queryClient),
   ];
 
   // App quay lại foreground / có mạng lại → nối lại nếu đang rớt (sync chạy khi `ready`). Nếu socket vẫn sống nhưng

@@ -1,11 +1,12 @@
 import type { ComponentType } from "react";
 import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router-dom";
-import { GuestOnly, RequireAuth } from "./guards";
+import { GuestOnly, RequireAuth, RequirePermission } from "./guards";
 import { FullScreenLoader, NotFoundPage, RouteErrorPage } from "./pages/status-pages";
+import { AgentShell } from "./shells/AgentShell";
 import { AppShell } from "./shells/AppShell";
 
 // Route frontend (KHÔNG phải endpoint backend): /app (full), /compact (WebView/iframe hẹp), /login, /signup.
-// /support, /admin, /widget, /embed được thêm ở các phase tương ứng. Trang tách chunk (lazy) để màn chat tải nhanh.
+// /support (console hỗ trợ), /widget (khách); /admin, /embed được thêm ở các phase tương ứng. Trang tách chunk (lazy) để màn chat tải nhanh.
 
 const page =
   <M extends Record<string, unknown>>(load: () => Promise<M>, name: keyof M & string) =>
@@ -44,6 +45,8 @@ export const routes: RouteObject[] = [
     HydrateFallback: FullScreenLoader,
     children: [
       { path: "/", element: <Navigate to="/app" replace /> },
+      // Widget khách: không cần đăng nhập thành viên, transport cách ly (main.tsx)
+      { path: "/widget", lazy: page(() => import("@/features/widget/WidgetPage"), "WidgetPage") },
       {
         element: <GuestOnly />,
         children: [
@@ -59,6 +62,22 @@ export const routes: RouteObject[] = [
             path: "/compact",
             element: <AppShell variant="compact" base="/compact" />,
             children: memberRoutes("/compact"),
+          },
+          {
+            path: "/support",
+            element: <RequirePermission permission="agent" />,
+            children: [
+              {
+                element: <AgentShell />,
+                children: [
+                  { index: true, lazy: page(() => import("@/features/agent/AgentConsole"), "AgentConsole") },
+                  {
+                    path: "t/:conversationId",
+                    lazy: page(() => import("@/features/agent/AgentConsole"), "AgentConsole"),
+                  },
+                ],
+              },
+            ],
           },
         ],
       },

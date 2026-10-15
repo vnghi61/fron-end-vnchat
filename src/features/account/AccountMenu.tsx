@@ -1,7 +1,8 @@
-import { Headset, LogOut, Monitor, Moon, Settings, Shield, Sun, UserRound } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Headset, LifeBuoy, LogOut, Monitor, Moon, Settings, Shield, Sun, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useMe, usePermissions, useSession } from "@/core/auth/session";
+import { useFeatures, useMe, usePermissions, useSession } from "@/core/auth/session";
 import {
   Avatar,
   DropdownMenu,
@@ -14,11 +15,14 @@ import {
 import { toast } from "@/core/ui/toast";
 import { useTheme, type ThemePreference } from "@/core/ui/theme";
 import { useShellPath } from "@/core/ui/shell";
+import { startSupport } from "@/features/support/api";
 
 export function AccountMenu({ side = "right" }: { side?: "right" | "top" | "bottom" }) {
   const { t } = useTranslation();
   const me = useMe();
   const permissions = usePermissions();
+  const features = useFeatures();
+  const qc = useQueryClient();
   const navigate = useNavigate();
   const to = useShellPath();
   const { preference, setPreference } = useTheme();
@@ -61,6 +65,19 @@ export function AccountMenu({ side = "right" }: { side?: "right" | "top" | "bott
         >
           {t("settings.theme")}: {themeLabel}
         </DropdownMenuItem>
+        {features.support && (
+          <DropdownMenuItem
+            icon={<LifeBuoy />}
+            onSelect={() => {
+              // mở yêu cầu đang mở nếu có (backend trả lại yêu cầu cũ – 200), không tạo trùng
+              startSupport(qc)
+                .then((c) => navigate(to(`/c/${c._id}`)))
+                .catch((e: unknown) => toast.error(e));
+            }}
+          >
+            {t("support.contact")}
+          </DropdownMenuItem>
+        )}
         {(permissions.agent || permissions.admin) && <DropdownMenuSeparator />}
         {permissions.agent && (
           <DropdownMenuItem icon={<Headset />} onSelect={() => navigate("/support")}>

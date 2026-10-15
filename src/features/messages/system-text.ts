@@ -3,15 +3,34 @@ import i18n, { tDynamic } from "@/core/i18n";
 import { memberName } from "@/features/conversations/display";
 
 // Câu hiển thị tin hệ thống (type "system", metadata.kind) – bảng §6 docs/ui-features-and-e2e-flows.md của backend.
-// Actor = người gửi tin (senderId). Tên lấy từ members của hội thoại (biệt danh ưu tiên).
+// Actor = người gửi tin (senderId). Tên lấy từ members của hội thoại (biệt danh ưu tiên); người đã rời hội thoại
+// (vd. nhân viên hỗ trợ đã chuyển/trả yêu cầu) lấy từ `known` – SystemMessage tải GET /api/users/:id cho các id đó.
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
 const ids = (v: unknown): Id[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 
-export function systemText(m: Message, conv: Conversation | undefined, nicknames: Record<Id, string>): string {
+/** Các user id mà câu hệ thống nhắc tới (để tải tên người không còn trong members). */
+export function referencedUserIds(m: Message): Id[] {
+  const meta = m.metadata ?? {};
+  return [meta.agentId, meta.toAgentId, meta.fromAgentId, meta.memberId, ...ids(meta.memberIds)].filter(
+    (x): x is string => typeof x === "string",
+  );
+}
+
+export function systemText(
+  m: Message,
+  conv: Conversation | undefined,
+  nicknames: Record<Id, string>,
+  known: Record<Id, string> = {},
+): string {
   const meta = m.metadata ?? {};
   const kind = str(meta.kind) || m.text;
-  const name = (id: unknown) => memberName(conv, typeof id === "string" ? id : null, nicknames);
+  const name = (id: unknown) => {
+    const uid = typeof id === "string" ? id : null;
+    const inMembers = !!uid && !!conv?.members.some((mm) => mm.user._id === uid);
+    if (uid && !nicknames[uid] && !inMembers && known[uid]) return known[uid];
+    return memberName(conv, uid, nicknames);
+  };
   const actor = nicknames[m.senderId] || m.sender?.name || name(m.senderId);
 
   switch (kind) {
@@ -45,8 +64,13 @@ export function systemText(m: Message, conv: Conversation | undefined, nicknames
       return str(meta.welcomeMessage) || tDynamic("system.unknown");
     case "support.assigned":
       return tDynamic("system.support.assigned", { name: name(meta.agentId) });
-    case "support.transferred":
-      return tDynamic("system.support.transferred", { name: name(meta.toAgentId) });
+    case "support.transferred": {
+      // khách không tra được tên nhân viên đã rời hội thoại (contract map B16) → câu chung thay vì "Ai đó"
+      const to = name(meta.toAgentId);
+      return to === i18n.t("system.someone")
+        ? tDynamic("system.support.transferredGeneric")
+        : tDynamic("system.support.transferred", { name: to });
+    }
     case "support.released":
     case "support.closed":
     case "support.reopened":

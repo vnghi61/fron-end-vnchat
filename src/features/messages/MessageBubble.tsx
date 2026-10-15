@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
   CheckCheck,
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { memo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { qk } from "@/core/api/query";
 import type { Conversation, ConversationMember, Message } from "@/core/api/types";
 import { useSession } from "@/core/auth/session";
 import { errorMessage } from "@/core/i18n";
@@ -23,6 +24,7 @@ import { ActionContextMenu, ActionDropdown, type ActionItem } from "@/core/ui/co
 import { Avatar, Popover, PopoverContent, PopoverTrigger, Tooltip } from "@/core/ui/components";
 import { toast } from "@/core/ui/toast";
 import { memberName } from "@/features/conversations/display";
+import { peopleApi } from "@/features/people/api";
 import { PollCard } from "@/features/polls/PollCard";
 import { retryMessage, toggleReaction } from "./api";
 import { AttachmentGrid } from "./AttachmentGrid";
@@ -30,7 +32,7 @@ import { renderRichText } from "./linkify";
 import { useOutbox, type OutboxItem } from "./outbox";
 import { ReactionBar } from "./ReactionBar";
 import { QUICK_REACTIONS } from "./reactions";
-import { systemText } from "./system-text";
+import { referencedUserIds, systemText } from "./system-text";
 import { useMessageActions } from "./useMessageActions";
 
 const EMPTY: Record<string, string> = {};
@@ -409,10 +411,28 @@ export const SystemMessage = memo(function SystemMessage({
   conversation: Conversation;
 }) {
   const nicknames = useSession((s) => s.bootstrap?.nicknames ?? EMPTY);
+  const registered = useSession((s) => s.bootstrap?.me.kind === "user");
+  // người được nhắc tới nhưng đã rời hội thoại → tải tên (GET /api/users/:id chỉ cho tài khoản đăng ký)
+  const missing = registered
+    ? referencedUserIds(message).filter((id) => !nicknames[id] && !conversation.members.some((m) => m.user._id === id))
+    : [];
+  const users = useQueries({
+    queries: missing.map((id) => ({
+      queryKey: qk.user(id),
+      queryFn: () => peopleApi.get(id),
+      staleTime: 5 * 60_000,
+      retry: false,
+    })),
+  });
+  const known: Record<string, string> = {};
+  users.forEach((q, i) => {
+    const id = missing[i];
+    if (id && q.data) known[id] = q.data.name;
+  });
   return (
     <div className="my-2 flex justify-center px-4">
       <p className="max-w-[90%] rounded-full bg-muted px-3 py-1 text-center text-xs text-muted-foreground">
-        {systemText(message, conversation, nicknames)}
+        {systemText(message, conversation, nicknames, known)}
       </p>
     </div>
   );

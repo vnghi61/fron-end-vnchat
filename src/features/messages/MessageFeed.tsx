@@ -222,7 +222,8 @@ export function MessageFeed({ conversation }: { conversation: Conversation }) {
 
   // Đánh dấu đã đọc khi đang nhìn thấy cuối feed
   useEffect(() => {
-    if (!meId || !atEnd || !visible || !query.isSuccess) return;
+    // myRole null = nhân viên đang xem yêu cầu chưa nhận (không phải thành viên → không có trạng thái đã đọc)
+    if (!meId || !atEnd || !visible || !query.isSuccess || conversation.myRole === null) return;
     const id = setTimeout(() => void markConversationRead(qc, conversation, meId), 300);
     return () => clearTimeout(id);
   }, [qc, conversation, meId, atEnd, visible, query.isSuccess, lastSeq]);

@@ -2,9 +2,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Info, MessageSquareOff } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { isApiError } from "@/core/api/errors";
-import { useSession } from "@/core/auth/session";
+import { usePermissions, useSession } from "@/core/auth/session";
 import { errorMessage } from "@/core/i18n";
 import { Button, ConfirmDialog, Dialog, EmptyState, IconButton, SheetContent, Spinner } from "@/core/ui/components";
 import { useShell, useShellPath } from "@/core/ui/shell";
@@ -17,6 +17,8 @@ import { MessageFeed } from "@/features/messages/MessageFeed";
 import { TypingIndicator } from "@/features/messages/TypingIndicator";
 import { ensurePresence } from "@/features/people/presence";
 import { ReminderDialog } from "@/features/reminders/ReminderDialog";
+import { isSupportCustomer } from "@/features/support/queue";
+import { SupportBanner } from "@/features/support/SupportBanner";
 import { useConversation } from "./api";
 import { ChatHeader } from "./ChatHeader";
 import { DetailsPanel } from "./details/DetailsPanel";
@@ -29,6 +31,8 @@ export function ChatView() {
   const { conversationId = "" } = useParams();
   const { t } = useTranslation();
   const to = useShellPath();
+  const navigate = useNavigate();
+  const permissions = usePermissions();
   const query = useConversation(conversationId);
   const setActive = useChatUi((s) => s.setActive);
   const meId = useSession((s) => s.bootstrap?.me._id);
@@ -74,8 +78,15 @@ export function ChatView() {
   }
 
   const iBlockedPeer = !!peerId && !!blocked?.includes(peerId);
+  const customer = isSupportCustomer(conv, meId);
   const disabledReason =
-    conv.myRole === null ? t("composer.placeholderReadonly") : iBlockedPeer ? t("chat.youBlocked") : null;
+    conv.myRole === null
+      ? t("composer.placeholderReadonly")
+      : customer && conv.support?.status === "closed"
+        ? t("support.closedReadonly")
+        : iBlockedPeer
+          ? t("chat.youBlocked")
+          : null;
 
   const infoButton = (
     <IconButton
@@ -90,6 +101,17 @@ export function ChatView() {
     <div className="flex h-full bg-background">
       <div className="flex min-w-0 flex-1 flex-col">
         <ChatHeader conversation={conv} actions={infoButton} />
+        {customer && <SupportBanner conversation={conv} onNewConversation={(c) => navigate(to(`/c/${c._id}`))} />}
+        {conv.kind === "support" && !customer && permissions.agent && (
+          <p className="shrink-0 border-b border-border bg-surface px-3 py-2 text-sm">
+            <Link
+              to={`/support/t/${conv._id}`}
+              className="font-medium text-primary-strong underline-offset-4 hover:underline"
+            >
+              {t("agent.openInConsole")}
+            </Link>
+          </p>
+        )}
         {/* key: feed/composer làm mới hoàn toàn khi đổi hội thoại (vị trí cuộn, vạch tin mới) */}
         <MessageFeed key={conv._id} conversation={conv} />
         <TypingIndicator conversationId={conv._id} />

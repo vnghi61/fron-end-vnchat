@@ -110,7 +110,7 @@ Loader biết origin B từ chính `src` của thẻ script, nên kiểm tra `ev
 | Standalone cùng site | cookie `jwt` httpOnly | trình duyệt | FE không chạm token |
 | Standalone khác site / iframe đầy đủ | `token` từ login | `localStorage["vnchat.auth.token"]` của origin iframe (bị **partition** theo site cha ở Safari/Chrome/Firefox) | cookie SameSite=strict không đi trong ngữ cảnh bên thứ ba; mỗi site host là một phiên riêng – chấp nhận được |
 | Widget khách | `visitorToken` (nối danh tính khách) | `localStorage["vnchat.widget.visitor"]` (partition theo site host) | backend khuyến nghị giữ để xem lại lịch sử |
-| Widget khách | JWT phiên khách | bộ nhớ + `sessionStorage` | tạo lại bằng `visitorToken` khi mất |
+| Widget khách | JWT phiên khách | bộ nhớ + `localStorage["vnchat.widget.token"]` (partition theo site host), gửi bằng Bearer; mọi request `credentials: "omit"` (không gửi/lưu cookie – B15) | hết hạn → tự tạo lại bằng `visitorToken` (`features/widget/session.ts`) |
 
 - Mọi truy cập storage bọc `try/catch`; storage bị chặn → vẫn chạy được trong phiên hiện tại (mất khi reload).
 - Không dùng Storage Access API (không cần vì dùng bearer); không đặt token vào URL, `postMessage` hay log.

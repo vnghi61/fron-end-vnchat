@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { api, setUnauthorizedHandler } from "@/core/api/http";
 import { tokenStore } from "@/core/api/token";
+import { transport } from "@/core/api/transport";
 import type { AuthResponse, Bootstrap, Id, UserProfile } from "@/core/api/types";
-import { config } from "@/core/config";
 import { describeDevice } from "@/core/lib/device";
 
 // Phiên đăng nhập + dữ liệu khởi động. Nguồn quyền/branding/limits DUY NHẤT là GET /api/me/bootstrap –
@@ -21,6 +21,8 @@ interface SessionState {
   init: () => Promise<void>;
   login: (body: { email: string; password: string }) => Promise<void>;
   signup: (body: { name: string; email: string; password: string }) => Promise<void>;
+  /** Phiên có sẵn token (khách widget sau POST /api/widget/sessions). */
+  startWithToken: (token: string) => Promise<void>;
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
   /** Xoá phiên cục bộ (401, session.revoked) – không gọi API. */
@@ -43,7 +45,7 @@ export const useSession = create<SessionState>((set, get) => ({
   init: async () => {
     if (get().status === "loading") return;
     // Bearer mode mà chưa có token thì chắc chắn chưa đăng nhập – khỏi gọi API.
-    if (config.authTransport === "bearer" && !tokenStore.get()) {
+    if (transport.auth() === "bearer" && !tokenStore.get()) {
       set({ status: "anonymous" });
       return;
     }
@@ -70,6 +72,18 @@ export const useSession = create<SessionState>((set, get) => ({
     const res = await api.post<AuthResponse>("/api/auth/signup", { name, email, password }, { skipAuthRedirect: true });
     tokenStore.set(res.token);
     set({ status: "authenticated", bootstrap: await fetchBootstrap(), notice: null });
+  },
+
+  startWithToken: async (token) => {
+    tokenStore.set(token);
+    set({ status: "loading" });
+    try {
+      set({ status: "authenticated", bootstrap: await fetchBootstrap(), notice: null });
+    } catch (error) {
+      tokenStore.clear();
+      set({ status: "anonymous", bootstrap: null });
+      throw error;
+    }
   },
 
   logout: async () => {

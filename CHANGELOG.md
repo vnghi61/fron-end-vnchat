@@ -2,6 +2,25 @@
 
 ## [Unreleased] – VNChat 2.0
 
+### Phase 4 – Business support
+- Widget khách `/widget` (màn 15): launcher ↔ panel (lấp đầy iframe khi được nhúng), form tên/email/câu hỏi, giữ danh
+  tính bằng `visitorToken` và tự lấy phiên mới khi token hết hạn, lịch sử yêu cầu, "Hỗ trợ trực tuyến không khả dụng"
+  khi `CHAT-403-001`. Transport cách ly: Bearer token riêng + fetch `credentials: "omit"` để phiên khách không ghi đè
+  cookie thành viên (B15).
+- Yêu cầu hỗ trợ phía khách (màn 16), dùng chung app thành viên và widget: chờ nhân viên → "<tên> đang hỗ trợ bạn" →
+  kết thúc (xác nhận) → đánh giá 1–5 sao + góp ý (radiogroup, phím mũi tên) → bắt đầu cuộc mới; ô soạn khoá khi đã
+  đóng. Thành viên mở yêu cầu từ menu tài khoản ("Liên hệ hỗ trợ").
+- Console hỗ trợ `/support` (màn 17/18, chỉ khi `permissions.agent`): thống kê, hàng đợi Chờ nhận / Của tôi / Đang xử lý
+  / Đã đóng / Tất cả + lọc tag (giữ trên URL), xem chỉ đọc yêu cầu chưa nhận qua `support:watch` (đăng ký lại sau mỗi
+  lần socket `ready`), nhận / chuyển / trả về hàng đợi / đóng / mở lại / gán hộ (admin), tag, chi tiết khách + thông
+  tin trang + mốc thời gian + đánh giá. Nhận trùng → `CHAT-409-006`: thông báo và tải lại trạng thái thật.
+- Realtime `support.updated` (room conv và room agents – chỉ merge field dùng chung, B2) và `support.message` cập nhật
+  inbox, chi tiết và mọi tab hàng đợi; thống kê làm mới có debounce.
+- Tin hệ thống tra tên người đã rời hội thoại (`GET /api/users/:id`), khách widget dùng câu chung (B16).
+- Kiểm thử: unit (hàng đợi, router event support, transport cách ly, banner, đánh giá, câu hệ thống) + kịch bản thật
+  khách ↔ 2 nhân viên (xem chỉ đọc, nhận trùng 409, tag, chuyển, trả, đóng, đánh giá, cuộc mới, phiên thành viên
+  không bị đá, thành viên mở yêu cầu, console một cột trên mobile).
+
 ### Phase 3 – Messaging advanced
 - Thông tin hội thoại (màn 09/10): cột phải ở pane ≥ 1200px, Sheet ở màn hẹp (`?panel=details`, nút back đóng panel
   trước). Thành viên + online, đổi vai trò (owner), chuyển trưởng nhóm, thêm/xoá thành viên, sửa tên/ảnh/quyền xem lịch
