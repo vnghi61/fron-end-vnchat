@@ -3,6 +3,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import type { Conversation } from "@/core/api/types";
 import { useSession } from "@/core/auth/session";
 import { errorMessage } from "@/core/i18n";
@@ -10,6 +11,7 @@ import { cn } from "@/core/lib/cn";
 import { formatDayLabel } from "@/core/lib/time";
 import { Button, EmptyState, Skeleton, Spinner } from "@/core/ui/components";
 import { useDocumentVisible } from "@/core/ui/hooks";
+import { toast } from "@/core/ui/toast";
 import { markConversationRead } from "@/features/conversations/api";
 import { useConversationTitle } from "@/features/conversations/display";
 import { useChatUi } from "@/features/conversations/ui-store";
@@ -38,6 +40,7 @@ const estimate = (row: FeedRow | undefined) => {
 };
 
 const AT_END_PX = 96;
+const JUMP_MAX_PAGES = 12; // ≈ 600 tin – không có API "tin quanh seq" (contract map B6)
 
 export function MessageFeed({ conversation }: { conversation: Conversation }) {
   const { t } = useTranslation();
@@ -51,6 +54,10 @@ export function MessageFeed({ conversation }: { conversation: Conversation }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atEnd, setAtEnd] = useState(true);
   const [unseen, setUnseen] = useState(0);
+  const [params, setParams] = useSearchParams();
+  const jumpId = params.get("msg");
+  const jumpSeq = Number(params.get("seq")) || null;
+  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   // seq đã đọc lúc mở – vạch "Tin nhắn mới" giữ cố định trong lần xem này
   const [unreadAfterSeq] = useState<number | null>(() => {
@@ -124,13 +131,58 @@ export function MessageFeed({ conversation }: { conversation: Conversation }) {
     };
   }, [settleToEnd, query.isSuccess]);
 
-  // Lần đầu có dữ liệu: xuống tin mới nhất.
+  // Lần đầu có dữ liệu: xuống tin mới nhất (trừ khi đang mở để nhảy tới một tin cụ thể).
   const initialScrolled = useRef(false);
   useLayoutEffect(() => {
     if (initialScrolled.current || !rows.length) return;
     initialScrolled.current = true;
-    settleToEnd();
-  }, [rows.length, settleToEnd]);
+    if (!jumpId) settleToEnd();
+  }, [rows.length, settleToEnd, jumpId]);
+
+  // Nhảy tới tin (?msg=&seq=): tải lùi từng trang tới khi có, cuộn vào giữa và tô viền 2.5s.
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
+  useEffect(() => {
+    if (!jumpId || !query.isSuccess || isFetchingNextPage) return;
+    const clear = () =>
+      setParams(
+        (p) => {
+          p.delete("msg");
+          p.delete("seq");
+          return p;
+        },
+        { replace: true },
+      );
+    const index = rows.findIndex((r) => r.kind === "message" && r.message._id === jumpId);
+    if (index !== -1) {
+      userScrolled.current = true; // không để "dính cuối" kéo đi mất
+      virtualizer.scrollToIndex(index, { align: "center" });
+      setHighlightId(jumpId);
+      clear();
+      const id = setTimeout(() => setHighlightId(null), 2500);
+      return () => clearTimeout(id);
+    }
+    const oldest = messages[0]?.seq ?? 0;
+    const pages = query.data?.pages.length ?? 0;
+    if (hasNextPage && pages < JUMP_MAX_PAGES && (jumpSeq === null || oldest > jumpSeq)) {
+      void fetchNextPage();
+      return;
+    }
+    toast.info(t("details.jumpFailed"));
+    clear();
+  }, [
+    jumpId,
+    jumpSeq,
+    rows,
+    messages,
+    query.isSuccess,
+    query.data,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    virtualizer,
+    setParams,
+    t,
+  ]);
 
   // Tin của chính mình (outbox mới) → luôn xuống cuối dù đang đọc tin cũ.
   const outboxCount = outbox.length;
@@ -151,7 +203,6 @@ export function MessageFeed({ conversation }: { conversation: Conversation }) {
     prevLastSeq.current = lastSeq;
   }, [lastSeq, atEnd, messages, meId]);
 
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
   const onScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -224,6 +275,7 @@ export function MessageFeed({ conversation }: { conversation: Conversation }) {
                   row={row}
                   conversation={conversation}
                   readers={row.kind === "message" ? readers.get(row.message._id) : undefined}
+                  highlighted={row.kind === "message" && row.message._id === highlightId}
                 />
               </div>
             );
@@ -251,10 +303,12 @@ function FeedRowView({
   row,
   conversation,
   readers,
+  highlighted,
 }: {
   row: FeedRow;
   conversation: Conversation;
   readers?: Parameters<typeof MessageBubble>[0]["readers"];
+  highlighted?: boolean;
 }) {
   const { t } = useTranslation();
   switch (row.kind) {
@@ -289,6 +343,7 @@ function FeedRowView({
           groupStart={row.groupStart}
           groupEnd={row.groupEnd}
           readers={readers}
+          highlighted={highlighted}
         />
       );
   }

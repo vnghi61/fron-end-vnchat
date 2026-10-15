@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Copy, EyeOff, Forward, Pencil, Pin, PinOff, Reply, Trash2 } from "lucide-react";
+import { AlarmClock, Copy, EyeOff, Forward, Pencil, Pin, PinOff, Reply, Trash2 } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Conversation, Message } from "@/core/api/types";
@@ -22,6 +22,8 @@ export interface MessagePermissions {
   canForward: boolean;
   canHide: boolean;
   canCopy: boolean;
+  /** Nhắc việc chỉ cho tài khoản đăng ký (requireUser). */
+  canRemind: boolean;
 }
 
 export function messagePermissions(
@@ -45,6 +47,7 @@ export function messagePermissions(
     canForward: live && isRegistered && ["text", "command", "file", "sticker"].includes(m.type),
     canHide: member,
     canCopy: !deleted && !!m.text,
+    canRemind: isRegistered && !deleted && m.type !== "system",
   };
 }
 
@@ -55,6 +58,7 @@ export function useMessageActions(m: Message, conv: Conversation): { items: Acti
   const setComposerMode = useChatUi((s) => s.setComposerMode);
   const openForward = useMessageDialogs((s) => s.openForward);
   const openRemove = useMessageDialogs((s) => s.openRemove);
+  const openRemind = useMessageDialogs((s) => s.openRemind);
 
   return useMemo(() => {
     const perms = messagePermissions(m, conv, me?._id, me?.kind === "user");
@@ -101,6 +105,13 @@ export function useMessageActions(m: Message, conv: Conversation): { items: Acti
         icon: <PinOff />,
         onSelect: () => void setPinned(qc, m, false).catch(fail),
       });
+    if (perms.canRemind)
+      items.push({
+        key: "remind",
+        label: t("reminders.remindMe"),
+        icon: <AlarmClock />,
+        onSelect: () => openRemind(m),
+      });
     if (perms.canHide)
       items.push({
         key: "hide",
@@ -126,5 +137,5 @@ export function useMessageActions(m: Message, conv: Conversation): { items: Acti
       });
     }
     return { items, perms };
-  }, [m, conv, me, t, qc, setComposerMode, openForward, openRemove]);
+  }, [m, conv, me, t, qc, setComposerMode, openForward, openRemove, openRemind]);
 }

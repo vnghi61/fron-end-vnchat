@@ -1,13 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { MessageSquareOff } from "lucide-react";
+import { Info, MessageSquareOff } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { isApiError } from "@/core/api/errors";
 import { useSession } from "@/core/auth/session";
 import { errorMessage } from "@/core/i18n";
-import { Button, ConfirmDialog, EmptyState, Spinner } from "@/core/ui/components";
-import { useShellPath } from "@/core/ui/shell";
+import { Button, ConfirmDialog, Dialog, EmptyState, IconButton, SheetContent, Spinner } from "@/core/ui/components";
+import { useShell, useShellPath } from "@/core/ui/shell";
 import { toast } from "@/core/ui/toast";
 import { deleteMessage } from "@/features/messages/api";
 import { Composer } from "@/features/messages/Composer";
@@ -16,10 +16,13 @@ import { ForwardDialog } from "@/features/messages/ForwardDialog";
 import { MessageFeed } from "@/features/messages/MessageFeed";
 import { TypingIndicator } from "@/features/messages/TypingIndicator";
 import { ensurePresence } from "@/features/people/presence";
+import { ReminderDialog } from "@/features/reminders/ReminderDialog";
 import { useConversation } from "./api";
 import { ChatHeader } from "./ChatHeader";
+import { DetailsPanel } from "./details/DetailsPanel";
 import { peerOf } from "./display";
 import { useChatUi } from "./ui-store";
+import { useDetailsPanel } from "./useJumpTo";
 
 /** Màn chat của một hội thoại (direct / nhóm / hỗ trợ dùng chung renderer – spec §5.10). */
 export function ChatView() {
@@ -31,6 +34,9 @@ export function ChatView() {
   const meId = useSession((s) => s.bootstrap?.me._id);
   const blocked = useSession((s) => s.bootstrap?.blockedUserIds);
   const conv = query.data;
+  const { size } = useShell();
+  const [detailsOpen, setDetailsOpen] = useDetailsPanel();
+  const inlineDetails = size === "xlarge";
 
   useEffect(() => {
     setActive(conversationId);
@@ -71,15 +77,39 @@ export function ChatView() {
   const disabledReason =
     conv.myRole === null ? t("composer.placeholderReadonly") : iBlockedPeer ? t("chat.youBlocked") : null;
 
+  const infoButton = (
+    <IconButton
+      label={detailsOpen ? t("details.close") : t("details.open")}
+      icon={<Info />}
+      aria-pressed={detailsOpen}
+      onClick={() => setDetailsOpen(!detailsOpen)}
+    />
+  );
+
   return (
-    <div className="flex h-full flex-col bg-background">
-      <ChatHeader conversation={conv} />
-      {/* key: feed/composer làm mới hoàn toàn khi đổi hội thoại (vị trí cuộn, vạch tin mới) */}
-      <MessageFeed key={conv._id} conversation={conv} />
-      <TypingIndicator conversationId={conv._id} />
-      <Composer key={`c-${conv._id}`} conversation={conv} disabledReason={disabledReason} />
+    <div className="flex h-full bg-background">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <ChatHeader conversation={conv} actions={infoButton} />
+        {/* key: feed/composer làm mới hoàn toàn khi đổi hội thoại (vị trí cuộn, vạch tin mới) */}
+        <MessageFeed key={conv._id} conversation={conv} />
+        <TypingIndicator conversationId={conv._id} />
+        <Composer key={`c-${conv._id}`} conversation={conv} disabledReason={disabledReason} />
+      </div>
+      {inlineDetails && detailsOpen && (
+        <aside aria-label={t("details.title")} className="w-80 shrink-0 border-l border-border bg-surface">
+          <DetailsPanel key={conv._id} conversation={conv} inline onClose={() => setDetailsOpen(false)} />
+        </aside>
+      )}
+      {!inlineDetails && (
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <SheetContent title={t("details.title")}>
+            <DetailsPanel key={conv._id} conversation={conv} inline={false} onClose={() => setDetailsOpen(false)} />
+          </SheetContent>
+        </Dialog>
+      )}
       <ForwardDialog />
       <DeleteMessageDialog />
+      <RemindDialogHost />
     </div>
   );
 }
@@ -106,4 +136,10 @@ function DeleteMessageDialog() {
       }}
     />
   );
+}
+
+function RemindDialogHost() {
+  const message = useMessageDialogs((s) => s.remind);
+  const close = useMessageDialogs((s) => s.openRemind);
+  return message ? <ReminderDialog key={message._id} message={message} onClose={() => close(null)} /> : null;
 }

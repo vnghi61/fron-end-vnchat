@@ -1,5 +1,6 @@
 import { Avatar as A } from "radix-ui";
 import { cn } from "@/core/lib/cn";
+import { initials } from "@/core/lib/initials";
 
 const sizes = {
   xs: "size-6 text-[10px]",
@@ -8,15 +9,6 @@ const sizes = {
   lg: "size-12 text-base",
   xl: "size-20 text-2xl",
 };
-
-const initials = (name: string) =>
-  name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(-2)
-    .map((w) => [...w][0]?.toUpperCase() ?? "")
-    .join("") || "?";
 
 // Màu nền chữ viết tắt cố định theo tên (không mang nghĩa) – chọn từ token để đủ tương phản cả hai theme.
 const tones = ["bg-primary-soft text-primary-strong", "bg-muted text-foreground"];

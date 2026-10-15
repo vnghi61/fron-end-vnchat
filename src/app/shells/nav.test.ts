@@ -16,3 +16,13 @@ describe("isNavActive", () => {
     expect(isNavActive(settings, "/compact", "/compact")).toBe(false);
   });
 });
+
+describe("NAV_ITEMS", () => {
+  it("giữ bottom nav ≤ 5 mục và mỗi mục chỉ active ở trang của nó", () => {
+    expect(NAV_ITEMS.filter((i) => i.bottom).length).toBeLessThanOrEqual(5);
+    const search = NAV_ITEMS.find((i) => i.labelKey === "nav.search")!;
+    expect(isNavActive(search, "/app", "/app/search")).toBe(true);
+    expect(isNavActive(search, "/app", "/app/settings")).toBe(false);
+    expect(isNavActive(chats, "/app", "/app/people")).toBe(false);
+  });
+});

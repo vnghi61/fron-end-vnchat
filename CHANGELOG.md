@@ -2,6 +2,25 @@
 
 ## [Unreleased] – VNChat 2.0
 
+### Phase 3 – Messaging advanced
+- Thông tin hội thoại (màn 09/10): cột phải ở pane ≥ 1200px, Sheet ở màn hẹp (`?panel=details`, nút back đóng panel
+  trước). Thành viên + online, đổi vai trò (owner), chuyển trưởng nhóm, thêm/xoá thành viên, sửa tên/ảnh/quyền xem lịch
+  sử, rời nhóm (gợi ý chuyển quyền khi `CHAT-409-002`), tin đã ghim, thư viện ảnh/video/âm thanh/tệp/liên kết, tìm trong
+  hội thoại.
+- Nhảy tới tin (`?msg=&seq=`): tải lùi tối đa 12 trang rồi cuộn giữa + làm nổi bật; quá cũ → thông báo (B6).
+- Bình chọn: tạo từ menu "+" (2..`limits.pollMaxOptions` phương án, chọn nhiều, ẩn danh, tự đóng), thẻ trong feed bỏ
+  phiếu / đổi phiếu / rút phiếu / kết thúc (người tạo, owner/admin), số đếm realtime `poll.updated/closed`.
+- Nhắc việc: "Nhắc tôi" trên tin (giờ nhanh, múi giờ máy, ISO có offset), trang Nhắc việc (sắp tới / đã nhắc / đã huỷ,
+  sửa, huỷ), `reminder.*` realtime, toast khi đến hạn kèm "Mở tin nhắn" (không có push – B13).
+- Ô soạn: emoji, sticker (`GET /api/stickers`), gợi ý `@thành viên` → `mentions[]`, gợi ý `/lệnh` từ `commandRules`,
+  tệp qua chữ ký Cloudinary (chọn / dán / kéo thả, ≤ 10 tệp, tiến trình, tải lại, chỉ gửi khi mọi tệp xong) – chỉ hiện
+  khi `features.uploads` (B10).
+- Tìm kiếm toàn cục (tin nhắn + người, lọc loại/ngày, `q` trên URL), Danh bạ, hồ sơ người dùng dạng Sheet (nhắn tin,
+  biệt danh riêng, chặn/bỏ chặn), Cài đặt › Thiết bị đăng nhập (thu hồi, đăng xuất mọi nơi) và Danh sách chặn.
+- Điều hướng thêm Tìm kiếm · Danh bạ · Nhắc việc (bottom nav ≤ 5 mục).
+- Kiểm thử: unit (gợi ý, nhắc việc, upload, thẻ bình chọn, nav, initials) + kịch bản 2 người dùng với backend thật
+  (nhóm, vai trò, bình chọn realtime, mention, ghim → nhảy tin, tìm, nhắc việc, biệt danh, cài đặt, sheet trên mobile).
+
 ### Phase 2 – Messaging core
 - Inbox theo `GET /api/conversations` (cursor, ảo hoá TanStack Virtual): mục "Đã ghim" (`?pinned=true`), lọc Cá nhân/Nhóm/
   Hỗ trợ/Lưu trữ, preview bản địa hoá, unread, tắt thông báo/ghim/lưu trữ (nút "…", chuột phải, nhấn giữ).

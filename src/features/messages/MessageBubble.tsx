@@ -1,6 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  BarChart3,
   Check,
   CheckCheck,
   Clock,
@@ -24,6 +23,7 @@ import { ActionContextMenu, ActionDropdown, type ActionItem } from "@/core/ui/co
 import { Avatar, Popover, PopoverContent, PopoverTrigger, Tooltip } from "@/core/ui/components";
 import { toast } from "@/core/ui/toast";
 import { memberName } from "@/features/conversations/display";
+import { PollCard } from "@/features/polls/PollCard";
 import { retryMessage, toggleReaction } from "./api";
 import { AttachmentGrid } from "./AttachmentGrid";
 import { renderRichText } from "./linkify";
@@ -159,6 +159,8 @@ function bubbleShape(mine: boolean, start: boolean, end: boolean) {
 function bodyTone(m: Message, mine: boolean, deleted: boolean) {
   if (deleted) return "border border-dashed border-border bg-transparent px-3 py-2 italic text-muted-foreground";
   if (m.type === "sticker") return "bg-transparent";
+  // Thẻ bình chọn dùng nền trung tính cho cả hai phía: thanh kết quả/nút cần tương phản ổn định.
+  if (m.type === "poll") return "w-80 max-w-full border border-border bg-surface px-3 py-3 text-foreground";
   return mine
     ? "bg-bubble-mine px-3 py-2 text-bubble-mine-foreground"
     : "border border-border bg-bubble-other px-3 py-2 text-bubble-other-foreground";
@@ -227,12 +229,7 @@ function MessageBody({
         </div>
       );
     case "poll":
-      return (
-        <div className="flex items-center gap-2">
-          <BarChart3 className="size-5 shrink-0" aria-hidden="true" />
-          <span className="font-medium">{t("message.poll", { text: m.text })}</span>
-        </div>
-      );
+      return <PollCard pollId={m.pollId} fallbackText={m.text} conversation={conv} />;
     default:
       return (
         <>

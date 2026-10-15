@@ -1,4 +1,4 @@
-import { MessagesSquare, Settings, type LucideIcon } from "lucide-react";
+import { AlarmClock, MessagesSquare, Search, Settings, Users, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   to: string;
@@ -22,5 +22,8 @@ export const isNavActive = (item: NavItem, base: string, pathname: string) => {
 /** Các mục điều hướng; mục chỉ được thêm khi màn hình tương ứng đã có contract + đã triển khai. */
 export const NAV_ITEMS: NavItem[] = [
   { to: "", labelKey: "nav.chats", icon: MessagesSquare, bottom: true, activePrefixes: ["/c/"], badge: "unread" },
+  { to: "/search", labelKey: "nav.search", icon: Search, bottom: true },
+  { to: "/people", labelKey: "nav.people", icon: Users, bottom: true },
+  { to: "/reminders", labelKey: "nav.reminders", icon: AlarmClock, bottom: true },
   { to: "/settings", labelKey: "nav.settings", icon: Settings, bottom: true },
 ];

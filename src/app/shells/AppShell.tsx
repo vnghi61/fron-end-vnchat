@@ -6,6 +6,7 @@ import { cn } from "@/core/lib/cn";
 import { CountBadge, Tooltip } from "@/core/ui/components";
 import { useContainerSize, type PaneSize } from "@/core/ui/hooks";
 import { AccountMenu } from "@/features/account/AccountMenu";
+import { ProfileSheet } from "@/features/people/ProfileSheet";
 import { ConnectionBanner } from "./ConnectionBanner";
 import { isNavActive, NAV_ITEMS } from "./nav";
 import { ShellContext, type ShellInfo, type ShellVariant } from "@/core/ui/shell";
@@ -39,6 +40,7 @@ export function AppShell({ variant = "full", base = "/app" }: { variant?: ShellV
           </main>
         </div>
         {showBottomNav && <BottomNav base={base} />}
+        <ProfileSheet />
       </div>
     </ShellContext.Provider>
   );

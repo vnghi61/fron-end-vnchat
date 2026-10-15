@@ -1,16 +1,38 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { api } from "@/core/api/http";
 import { tokenStore } from "@/core/api/token";
-import type { Bootstrap } from "@/core/api/types";
+import type { Bootstrap, Reminder } from "@/core/api/types";
 import { registerSessionHandlers } from "@/core/auth/realtime";
+import i18n from "@/core/i18n";
 import { useSession } from "@/core/auth/session";
 import { connectSocket, disconnectSocket, getSocket, reconnectSocket } from "@/core/realtime/socket";
 import { registerConversationHandlers } from "@/features/conversations/realtime";
 import { resetSyncCursor, syncNow } from "@/features/conversations/sync";
 import { registerTypingHandlers } from "@/features/messages/typing";
 import { registerPresenceHandlers, resetPresence } from "@/features/people/presence";
+import { registerPollHandlers } from "@/features/polls/api";
+import { registerReminderHandlers } from "@/features/reminders/api";
+import { toast } from "@/core/ui/toast";
 
 // Ghép socket + các nhóm handler (lớp app được phép import cả core lẫn features). Một lần cho mỗi phiên đăng nhập.
+
+/** reminder.fired → toast trong app (không có push notification – backend chưa hỗ trợ, contract map B13). */
+function notifyReminder(r: Reminder) {
+  const t = i18n.t.bind(i18n);
+  const open =
+    r.conversationId && r.messageId
+      ? () => {
+          const base = window.location.pathname.startsWith("/compact") ? "/compact" : "/app";
+          void import("./router").then(({ router }) =>
+            router.navigate(`${base}/c/${r.conversationId}?msg=${r.messageId}`),
+          );
+        }
+      : null;
+  toast.info(t("reminders.fired", { note: r.note }), {
+    duration: 15_000,
+    action: open ? { label: t("reminders.open"), onClick: open } : undefined,
+  });
+}
 
 export function startRealtime(queryClient: QueryClient): () => void {
   resetSyncCursor(useSession.getState().bootstrap?.serverTime ?? null);
@@ -40,6 +62,8 @@ export function startRealtime(queryClient: QueryClient): () => void {
     registerConversationHandlers(queryClient),
     registerTypingHandlers(meId),
     registerPresenceHandlers(),
+    registerPollHandlers(queryClient),
+    registerReminderHandlers(queryClient, notifyReminder),
   ];
 
   // App quay lại foreground / có mạng lại → nối lại nếu đang rớt (sync chạy khi `ready`). Nếu socket vẫn sống nhưng

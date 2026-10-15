@@ -19,6 +19,9 @@ const memberRoutes = (base: string): RouteObject[] => [
       { path: "c/:conversationId", lazy: page(() => import("@/features/conversations/ChatView"), "ChatView") },
     ],
   },
+  { path: "search", lazy: page(() => import("@/features/search/SearchPage"), "SearchPage") },
+  { path: "people", lazy: page(() => import("@/features/people/PeoplePage"), "PeoplePage") },
+  { path: "reminders", lazy: page(() => import("@/features/reminders/RemindersPage"), "RemindersPage") },
   // API cũ (/api/messages/*) – giữ tới khi E2E xác nhận Conversations tương đương (Phase 7)
   { path: "legacy", lazy: page(() => import("@/features/legacy/LegacyChatPage"), "LegacyChatPage") },
   {
@@ -27,6 +30,8 @@ const memberRoutes = (base: string): RouteObject[] => [
     children: [
       { path: "profile", lazy: page(() => import("@/features/account/ProfileSettings"), "ProfileSettings") },
       { path: "appearance", lazy: page(() => import("@/features/account/AppearanceSettings"), "AppearanceSettings") },
+      { path: "sessions", lazy: page(() => import("@/features/account/SessionsSettings"), "SessionsSettings") },
+      { path: "blocks", lazy: page(() => import("@/features/account/BlocksSettings"), "BlocksSettings") },
     ],
   },
   { path: "*", element: <Navigate to={base} replace /> },
