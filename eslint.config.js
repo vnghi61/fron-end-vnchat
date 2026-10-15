@@ -20,7 +20,13 @@ export default tseslint.config(
     },
   },
   {
-    files: ["scripts/**/*.mjs", "*.config.{js,ts}"],
+    files: ["scripts/**/*.mjs", "*.config.{js,ts}", "examples/**/*.mjs"],
     languageOptions: { globals: globals.node },
+  },
+  {
+    // Playwright: `use` của fixture không phải React hook; `({}, use)` là chữ ký fixture chuẩn
+    files: ["e2e/**/*.ts"],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    rules: { "react-hooks/rules-of-hooks": "off", "no-empty-pattern": "off" },
   },
 );

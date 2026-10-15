@@ -4,7 +4,8 @@ import { storage } from "@/core/lib/storage";
 // Token Bearer của tài liệu này (tab/iframe).
 // - cookie mode: không giữ token – cookie jwt httpOnly lo xác thực, JWT không nằm trong JS.
 // - bearer mode: lưu localStorage của origin hiện tại (bị partition theo site cha khi nằm trong iframe).
-// - widget khách: scope riêng trong sessionStorage (features/widget).
+// - widget khách / trang trong iframe: scope riêng trong localStorage (vnchat.widget.token, vnchat.embed.token –
+//   core/api/transport.ts#isolateSession).
 
 export type TokenScope = { key: string | null; area: "local" | "session"; keep: boolean };
 

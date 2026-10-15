@@ -10,7 +10,7 @@ import type {
   UserBrief,
 } from "@/core/api/types";
 
-// Event Socket.IO theo docs/realtime.md §3–4 của backend (tên + payload). Event cũ newMessage/getOnlineUsers cố ý không khai.
+// Event Socket.IO theo docs/realtime.md §3–4 của backend (tên + payload). Event cũ newMessage/getOnlineUsers không dùng (màn legacy đã gỡ ở Phase 7).
 
 export interface PollEvent {
   pollId: Id;

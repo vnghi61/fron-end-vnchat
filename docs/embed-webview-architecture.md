@@ -171,10 +171,11 @@ Loader biết origin B từ chính `src` của thẻ script, nên kiểm tra `ev
 
 ## 8. Ma trận kiểm thử
 
-Unit: `src/core/embed/protocol.test.ts` (shape/route/origin/URL). Kiểm thử trình duyệt Phase 6 chạy Chromium headless với
-backend thật, host `http://127.0.0.1:5180` (`examples/host`) khác site với app `http://localhost:5174`.
+Unit: `src/core/embed/protocol.test.ts` (shape/route/origin/URL). Trình duyệt: `e2e/embed.spec.ts` (Phase 7, chạy trong
+`npm run e2e` / `npm run e2e:matrix`) với backend thật, host `http://127.0.0.1:5180` (`examples/host`) khác site với app
+`http://localhost:5174`. Test gắn `@cross` chạy thêm trên WebKit (Safari) và Firefox, `@mobile` trên Pixel 7 / iPhone 14.
 
-| Kịch bản | Môi trường | Kỳ vọng | Phase 6 |
+| Kịch bản | Môi trường | Kỳ vọng | Trạng thái |
 | :--- | :--- | :--- | :--- |
 | Header CSP theo route | dev server | `/embed`, `/widget` có allowlist; `/app` chỉ `'self'` | ✅ Chromium |
 | Loader: launcher, mở lần đầu tạo iframe, `ready` một lần, `open`/`close`, focus về launcher | host demo | như mô tả §4 | ✅ Chromium |
@@ -187,8 +188,8 @@ backend thật, host `http://127.0.0.1:5180` (`examples/host`) khác site với 
 | `/embed/login?next=/admin/users`; `history.pushState('/admin/users')` trong khung | host demo | về `/embed`; `FrameGuard` thay vì trang quản trị | ✅ Chromium |
 | Viewport < 480px | host demo | widget toàn màn hình | ✅ Chromium |
 | Bridge native giả lập (`ReactNativeWebView`) | Chromium mobile emulation | `ready`, `theme:set`, `viewport:set` áp; route ngoài `/embed` bị bỏ | ✅ Chromium |
-| Cookie bên thứ ba bị chặn | Safari (ITP), Firefox | đăng nhập bearer trong iframe vẫn chạy | Phase 7 |
-| Storage bị chặn | Chrome "Block all cookies" | widget vẫn chat được trong phiên | Phase 7 |
-| Widget tắt | admin `widget.enabled=false` | iframe gửi `hide`, launcher biến mất | Phase 7 (Phase 5 đã kiểm phía app) |
-| Bàn phím ảo + safe-area | iOS Safari, Android Chrome, Android WebView thật | composer không bị che, không cuộn ngang | Phase 7 (thiết bị thật) |
-| Back cứng Android | WebView thật | đóng panel trước, rồi về inbox | Phase 7 (thiết bị thật) |
+| Cookie bên thứ ba bị chặn | Safari (ITP), Firefox | đăng nhập bearer trong iframe vẫn chạy | `e2e/embed.spec.ts` @cross (WebKit/Firefox trong Playwright); Safari thật: `docs/release-checklist.md` |
+| Storage bị chặn | Chrome "Block all cookies" | widget vẫn chat được trong phiên | kiểm tay (release checklist) |
+| Widget tắt | admin `widget.enabled=false` | iframe gửi `hide`, launcher biến mất | Phase 5 (kịch bản thật); E2E không đổi cài đặt dùng chung |
+| Bàn phím ảo + safe-area | iOS Safari, Android Chrome, Android WebView thật | composer không bị che, không cuộn ngang | không cuộn ngang: `e2e/responsive.spec.ts`; bàn phím/safe-area: thiết bị thật (release checklist) |
+| Back cứng Android | WebView thật | đóng panel trước, rồi về inbox | `history.back()`: `e2e/responsive.spec.ts`; nút back cứng: thiết bị thật |

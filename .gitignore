@@ -46,3 +46,4 @@ dist-ssr
 /blob-report/
 /playwright/.cache/
 .env.e2e
+/e2e/.auth/

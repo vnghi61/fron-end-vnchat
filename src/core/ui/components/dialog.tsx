@@ -3,9 +3,11 @@ import { Dialog as D } from "radix-ui";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/core/lib/cn";
+import { useReturnFocus } from "@/core/ui/focus-return";
 import { IconButton } from "./icon-button";
 
-// Dialog (giữa màn) và Sheet (trượt từ cạnh) – Radix lo focus trap, ESC, trả focus về nút mở.
+// Dialog (giữa màn) và Sheet (trượt từ cạnh) – Radix lo focus trap, ESC; useReturnFocus trả focus về nút mở kể cả khi
+// dialog mở bằng state (không có Dialog.Trigger).
 
 export const Dialog = D.Root;
 export const DialogTrigger = D.Trigger;
@@ -34,10 +36,12 @@ export function DialogContent({
   size = "md",
 }: ContentProps) {
   const { t } = useTranslation();
+  const focus = useReturnFocus();
   return (
     <D.Portal>
       <D.Overlay className="fixed inset-0 z-50 animate-fade-in bg-overlay" />
       <D.Content
+        {...focus}
         className={cn(
           "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(var(--app-height,100dvh)-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 animate-scale-in flex-col rounded-lg border border-border bg-surface-raised shadow-lg focus-visible:outline-none",
           sizes[size],
@@ -79,10 +83,12 @@ export function SheetContent({
   className?: string;
 }) {
   const { t } = useTranslation();
+  const focus = useReturnFocus();
   return (
     <D.Portal>
       <D.Overlay className="fixed inset-0 z-40 animate-fade-in bg-overlay" />
       <D.Content
+        {...focus}
         className={cn(
           "fixed z-40 flex flex-col bg-surface-raised shadow-lg focus-visible:outline-none",
           side === "right"

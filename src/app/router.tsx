@@ -25,8 +25,6 @@ const memberRoutes = (base: string): RouteObject[] => [
   { path: "search", lazy: page(() => import("@/features/search/SearchPage"), "SearchPage") },
   { path: "people", lazy: page(() => import("@/features/people/PeoplePage"), "PeoplePage") },
   { path: "reminders", lazy: page(() => import("@/features/reminders/RemindersPage"), "RemindersPage") },
-  // API cũ (/api/messages/*) – giữ tới khi E2E xác nhận Conversations tương đương (Phase 7)
-  { path: "legacy", lazy: page(() => import("@/features/legacy/LegacyChatPage"), "LegacyChatPage") },
   {
     path: "settings",
     lazy: page(() => import("@/features/account/SettingsLayout"), "SettingsLayout"),

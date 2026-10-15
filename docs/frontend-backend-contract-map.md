@@ -104,7 +104,7 @@
 | `session.revoked {reason}` | xoá phiên → `/login` + thông báo theo `reason` (`disabled` / `logout_all`) | server ngắt socket ngay sau |
 | `support.updated` | ticket trong inbox (khách) & hàng đợi (agent – có `conversation`) | |
 | `support.message` | hàng đợi agent: preview/đưa lên đầu | chỉ room `agents` |
-| `newMessage`, `getOnlineUsers` | **không nghe** ở client mới (Legacy) | gỡ hẳn khi bỏ màn legacy (Phase 7) |
+| `newMessage`, `getOnlineUsers` | **không nghe** (Legacy) | màn legacy đã gỡ ở Phase 7 – không còn code nào nghe |
 
 Kết nối lại (spec §5.7): `connect` → chờ `ready` → `GET /api/sync?since=<mốc>&limit=500` → áp `conversations[]` + `messages[]`
 → lưu `until`. Mốc đầu tiên = `bootstrap.serverTime`. Sau sync luôn làm mới presence (`GET /api/presence?ids=`) và invalidate
@@ -147,5 +147,8 @@ trang đầu inbox (xem B1, B5).
 | `GET /api/auth/check` | `GET /api/me/bootstrap` (+ `GET /api/me`) | Phase 1 |
 | `PUT /api/auth/update-profile` | `PATCH /api/me` | Phase 1 |
 | socket `query: {userId}` + `getOnlineUsers` | JWT handshake + `ready` + `user.online/offline` + `GET /api/presence` | Phase 1 |
-| `GET /api/messages/users` | `GET /api/conversations` + `GET /api/users?q=` | sau khi E2E inbox pass (Phase 7) |
-| `GET /api/messages/:id`, `POST /api/messages/send/:id`, `newMessage` | `POST /api/conversations/direct` + `/messages` + `message.new` | sau khi E2E chat 1-1 pass (Phase 7) |
+| `GET /api/messages/users` | `GET /api/conversations` + `GET /api/users?q=` | **đã gỡ – Phase 7** (`e2e/chat.spec.ts` pass) |
+| `GET /api/messages/:id`, `POST /api/messages/send/:id`, `newMessage` | `POST /api/conversations/direct` + `/messages` + `message.new` | **đã gỡ – Phase 7** (`e2e/chat.spec.ts` pass) |
+
+Màn `/app/legacy` (Phase 1) đã xoá; fixture E2E (`e2e/fixtures.ts`) làm test fail nếu app gọi lại bất kỳ endpoint nào ở
+bảng trên. `GET /api/messages/search` là API tìm kiếm **mới**, vẫn dùng. Chi tiết chuyển đổi: `docs/migration-notes.md`.

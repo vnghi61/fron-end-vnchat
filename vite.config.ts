@@ -40,7 +40,15 @@ export default defineConfig(({ mode }) => {
         "/socket.io": { target, changeOrigin: true, ws: true },
       },
     },
-    preview: { port: 5174, strictPort: true },
+    // preview = bản build production; proxy như dev để chạy E2E trên bản build (E2E_SERVER=preview)
+    preview: {
+      port: 5174,
+      strictPort: true,
+      proxy: {
+        "/api": { target, changeOrigin: true },
+        "/socket.io": { target, changeOrigin: true, ws: true },
+      },
+    },
     build: {
       sourcemap: true,
       rollupOptions: {

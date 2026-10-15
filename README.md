@@ -3,7 +3,8 @@
 Frontend React cho [back-end-vnchat](https://github.com/vnghi61/back-end-vnchat): một codebase chạy **standalone**,
 **iframe nhúng**, **widget hỗ trợ khách** và **WebView mobile**.
 
-> Đang nâng cấp theo `VNCHAT-UI-UX-WEBVIEW-IMPLEMENTATION.md` (Phase 0 → 7). Trạng thái từng phase: `CHANGELOG.md`.
+> Nâng cấp theo `VNCHAT-UI-UX-WEBVIEW-IMPLEMENTATION.md` (Phase 0 → 7, đã xong). Trạng thái từng phase: `CHANGELOG.md`;
+> phát hành: [docs/release-checklist.md](docs/release-checklist.md).
 
 ## Chạy local
 
@@ -26,7 +27,8 @@ Thử nhúng cross-site: thêm `VITE_EMBED_PARENT_ORIGINS=http://127.0.0.1:5180`
 | `npm run dev` | dev server |
 | `npm run build` | typecheck + build production (`dist/`) |
 | `npm run typecheck` / `npm run lint` / `npm test` | kiểm tra |
-| `npm run check` | tất cả các bước trên (dùng trước khi commit) |
+| `npm run check` | typecheck + lint + unit test + build + `scripts/check-bundle.mjs` (ngân sách gzip, quét bí mật) – chạy trước khi commit |
+| `npm run e2e` / `npm run e2e:matrix` | Playwright với backend thật: Chromium / + Chrome mobile, WebKit (Safari/iOS), Firefox – xem [e2e/README.md](e2e/README.md) |
 | `npm run gen:api` | sinh `src/core/api/generated/openapi.d.ts` từ OpenAPI thật của backend (`VNCHAT_OPENAPI=<file hoặc URL>`) |
 
 ## Tài liệu
@@ -36,6 +38,9 @@ Thử nhúng cross-site: thêm `VITE_EMBED_PARENT_ORIGINS=http://127.0.0.1:5180`
 - [docs/embed-webview-architecture.md](docs/embed-webview-architecture.md) – iframe, widget, WebView, bridge postMessage
 - [deploy/README.md](deploy/README.md) – deploy static + header `frame-ancestors` (nginx, Render)
 - [examples/host/README.md](examples/host/README.md) – mẫu tích hợp: widget, iframe `/embed`, WebView Android/iOS/React Native
+- [docs/release-checklist.md](docs/release-checklist.md) – checklist phát hành, staging, kiểm tay thiết bị thật, rollback
+- [docs/migration-notes.md](docs/migration-notes.md) – chuyển từ 1.x: route, API, biến môi trường, storage
+- [e2e/README.md](e2e/README.md) – chuẩn bị và chạy E2E, bao phủ
 
 ## Cấu trúc
 

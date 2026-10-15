@@ -2,6 +2,27 @@
 
 ## [Unreleased] – VNChat 2.0
 
+### Phase 7 – Hardening & release
+- Bộ E2E Playwright với backend thật (`e2e/`, `npm run e2e`, `npm run e2e:matrix`): đăng nhập/đăng ký/đăng xuất,
+  chat 1-1 (bài kiểm tương đương legacy: realtime, chưa đọc, đang nhập, đã xem, trực tuyến, gửi lại cùng `clientMsgId`,
+  khôi phục qua `/api/sync`, phân trang lịch sử), nhóm + thao tác trên tin, bình chọn, nhắc việc, tìm kiếm, hỗ trợ khách
+  ↔ nhân viên, quản trị, nhúng cross-site + WebView, điện thoại. Đã chạy xanh trên Chromium desktop, Chrome mobile
+  (Pixel 7) và bản build production (`E2E_SERVER=preview`). Ma trận WebKit (Safari desktop + iPhone 14) và Firefox đã cấu
+  hình nhưng **chưa chạy**: Playwright 1.63 cần bản trình duyệt mới (`npx playwright install webkit firefox`).
+- Khả năng tiếp cận: axe-core WCAG 2.1 AA trên 11 màn × sáng/tối (không còn vi phạm serious/critical), bàn phím, bẫy
+  focus dialog, giảm chuyển động.
+- Sửa (a11y, WCAG 2.4.3): đóng dialog/sheet/hộp xác nhận mở bằng state hoặc từ menu làm focus rơi về `<body>` – Radix
+  chỉ trả focus cho `Dialog.Trigger`. `useReturnFocus` (dùng trong `DialogContent`, `SheetContent`, `ConfirmDialog`) trả
+  focus về nút đã mở, hoặc nút mở menu (qua `aria-labelledby`) khi dialog mở từ mục menu.
+- Gỡ màn legacy `/app/legacy` và mọi lời gọi `/api/messages/users|:id|send/:id`, `newMessage` sau khi E2E chat 1-1
+  pass; fixture E2E fail nếu app gọi lại API legacy.
+- Hiệu năng & bảo mật bản build: `scripts/check-bundle.mjs` trong `npm run check` – ngân sách gzip (JS ban đầu 248.8/270 KB,
+  chunk lớn nhất 152.6/165 KB, loader widget 3.0/4 KB) và quét bí mật trong `dist/` (private key, JWT, `ck_`, chuỗi kết
+  nối DB, mật khẩu QA).
+- Ảnh visual chuẩn cho màn tĩnh (đăng nhập sáng/tối, form widget, đăng nhập nhúng trên điện thoại).
+- `vite preview` proxy `/api` như dev; tài liệu: `docs/release-checklist.md` (staging, kiểm tay iOS Safari/Android
+  WebView, phát hành, rollback), `docs/migration-notes.md`, `e2e/README.md`.
+
 ### Phase 6 – Embed & WebView
 - Bridge v1 (`src/core/embed`): kiểm tra origin (allowlist `VITE_EMBED_PARENT_ORIGINS`, `ancestorOrigins` → referrer) +
   `event.source` + shape từng message; gửi `postMessage` với targetOrigin cụ thể; `ready` một lần, `resize` gộp theo
