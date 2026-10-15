@@ -35,6 +35,10 @@ export class ApiError extends Error {
   get isUnauthorized() {
     return this.status === 401;
   }
+
+  get isForbidden() {
+    return this.status === 403;
+  }
 }
 
 export const NETWORK_ERROR = "NETWORK";

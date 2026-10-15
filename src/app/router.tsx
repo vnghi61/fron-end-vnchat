@@ -2,11 +2,12 @@ import type { ComponentType } from "react";
 import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router-dom";
 import { GuestOnly, RequireAuth, RequirePermission } from "./guards";
 import { FullScreenLoader, NotFoundPage, RouteErrorPage } from "./pages/status-pages";
+import { AdminShell } from "./shells/AdminShell";
 import { AgentShell } from "./shells/AgentShell";
 import { AppShell } from "./shells/AppShell";
 
 // Route frontend (KHÔNG phải endpoint backend): /app (full), /compact (WebView/iframe hẹp), /login, /signup.
-// /support (console hỗ trợ), /widget (khách); /admin, /embed được thêm ở các phase tương ứng. Trang tách chunk (lazy) để màn chat tải nhanh.
+// /support (console hỗ trợ), /admin (quản trị), /widget (khách); /embed thêm ở Phase 6. Trang tách chunk (lazy) để màn chat tải nhanh.
 
 const page =
   <M extends Record<string, unknown>>(load: () => Promise<M>, name: keyof M & string) =>
@@ -75,6 +76,25 @@ export const routes: RouteObject[] = [
                     path: "t/:conversationId",
                     lazy: page(() => import("@/features/agent/AgentConsole"), "AgentConsole"),
                   },
+                ],
+              },
+            ],
+          },
+          {
+            path: "/admin",
+            element: <RequirePermission permission="admin" />,
+            children: [
+              {
+                element: <AdminShell />,
+                children: [
+                  { index: true, element: <Navigate to="users" replace /> },
+                  { path: "users", lazy: page(() => import("@/features/admin/UsersSection"), "UsersSection") },
+                  { path: "policies", lazy: page(() => import("@/features/admin/PoliciesSection"), "PoliciesSection") },
+                  { path: "settings", lazy: page(() => import("@/features/admin/SettingsSection"), "SettingsSection") },
+                  { path: "webhooks", lazy: page(() => import("@/features/admin/WebhooksSection"), "WebhooksSection") },
+                  { path: "api-keys", lazy: page(() => import("@/features/admin/ApiKeysSection"), "ApiKeysSection") },
+                  { path: "audit", lazy: page(() => import("@/features/admin/AuditSection"), "AuditSection") },
+                  { path: "*", element: <Navigate to="/admin/users" replace /> },
                 ],
               },
             ],

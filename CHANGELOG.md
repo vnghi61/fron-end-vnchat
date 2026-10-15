@@ -2,6 +2,24 @@
 
 ## [Unreleased] – VNChat 2.0
 
+### Phase 5 – Administration
+- Khu quản trị `/admin` (vào khi `permissions.admin`), điều hướng dọc khi rộng / cuộn ngang khi hẹp. Mỗi mục có object
+  quyền riêng ở backend nên mục nào trả 403 thì hiện "không có quyền xem mục này" thay vì lỗi (B3).
+- Người dùng (màn 19): tìm tên/email, lọc loại / trạng thái / vai trò, đổi vai trò (admin/agent/member), khoá – mở khoá
+  (không tự khoá mình; lỗi "phải còn một admin" hiện đúng thông điệp).
+- Phân quyền (màn 20): ma trận vai trò × đối tượng dựng từ đúng rule server trả (không suy từ tên vai trò), thêm vai trò,
+  hoàn tác, chặn trước lỗi tự khoá (admin phải giữ quyền ghi `admin:policies`), lưu xong tải lại bootstrap.
+- Cài đặt hệ thống (màn 21): thương hiệu (tên, logo, màu chủ đạo + xem trước theo đúng thuật toán tương phản của app),
+  widget (bật/tắt, lời chào), lệnh ô soạn, bộ sticker – mỗi thẻ lưu riêng, áp dụng ngay cho app.
+- Webhook (màn 22): tạo / sửa / bật tắt / xoá, chọn sự kiện, lịch sử gửi + gửi lại; secret chỉ hiện một lần và không
+  nằm trong cache.
+- API key (màn 23): tạo với phạm vi + hạn dùng, key `ck_…` hiện một lần, thu hồi.
+- Nhật ký (màn 24): mới nhất trước, lọc hành động / người thực hiện, chi tiết metadata, tải thêm (không có tổng / lọc thời
+  gian – B11).
+- Kiểm thử: unit (ma trận phân quyền, 403 từng mục, secret một lần, cập nhật danh sách) + kịch bản thật (vai trò, khoá,
+  chặn tự khoá, 403 từng mục với quyền cấp tạm, lệnh mới hiện trong gợi ý "/", tắt widget → khách thấy không khả dụng,
+  webhook, API key, nhật ký, giao diện mobile).
+
 ### Phase 4 – Business support
 - Widget khách `/widget` (màn 15): launcher ↔ panel (lấp đầy iframe khi được nhúng), form tên/email/câu hỏi, giữ danh
   tính bằng `visitorToken` và tự lấy phiên mới khi token hết hạn, lịch sử yêu cầu, "Hỗ trợ trực tuyến không khả dụng"
