@@ -10,7 +10,8 @@ hợp đồng API/socket đã ghi trong `docs/frontend-backend-contract-map.md`.
       (ngân sách gzip: JS ban đầu ≤ 270 KB, chunk lớn nhất ≤ 165 KB, `vnchat-widget.js` ≤ 4 KB; quét bí mật trong `dist/`).
 - [ ] `npm run e2e` xanh trên backend local cùng phiên bản với backend sẽ chạy cùng (xem `e2e/README.md`).
 - [ ] `E2E_SERVER=preview npm run e2e` xanh – chạy trên **bản build production**, không phải dev server.
-- [ ] `npm run e2e:matrix` xanh (Chrome mobile, WebKit desktop + iPhone, Firefox cho test `@cross` / `@mobile`).
+- [ ] `npm run e2e:matrix` xanh (Chromium, Chrome mobile, Firefox, rồi WebKit desktop + iPhone cho test `@cross` / `@mobile`).
+- [ ] Blocker B17 (WebKit lưu cookie dù `credentials: "omit"`) đã được backend xử lý, hoặc chấp nhận rủi ro có ghi chú.
 - [ ] Ảnh visual (`e2e/visual.spec.ts-snapshots/`) chỉ đổi khi có thay đổi giao diện có chủ đích – đính kèm ảnh trong MR.
 - [ ] `CHANGELOG.md` cập nhật; mục blocker mới (nếu có) ghi vào contract map §6.
 - [ ] Không có tính năng chưa có hợp đồng backend hiển thị như đang chạy (gọi thoại/video, push, SSO, upload resume,

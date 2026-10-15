@@ -6,18 +6,23 @@ import { useCallback, useRef } from "react";
 
 const MENU = '[role="menu"],[role="listbox"]';
 
-/** Vài phần tử được focus gần nhất (ngoài menu) – ô `autoFocus` trong dialog nhận focus trước khi dialog gắn ref. */
+/**
+ * Vài phần tử được dùng gần nhất (ngoài menu) – ô `autoFocus` trong dialog nhận focus trước khi dialog gắn ref; Safari
+ * không focus nút khi bấm chuột nên ghi nhận cả phần tử tương tác vừa được nhấn.
+ */
 const history: HTMLElement[] = [];
-if (typeof document !== "undefined")
-  document.addEventListener(
-    "focus", // capture: "focus" không nổi bọt nhưng vẫn bắt được ở document
-    (e) => {
-      if (!(e.target instanceof HTMLElement) || e.target === document.body || e.target.closest(MENU)) return;
-      history.push(e.target);
-      if (history.length > 10) history.shift();
-    },
-    true,
-  );
+const INTERACTIVE = 'button, a[href], input, select, textarea, [role="button"], [tabindex]:not([tabindex="-1"])';
+const remember = (el: Element | null) => {
+  if (!(el instanceof HTMLElement) || el === document.body || el.closest(MENU)) return;
+  if (history[history.length - 1] === el) return;
+  history.push(el);
+  if (history.length > 10) history.shift();
+};
+if (typeof document !== "undefined") {
+  // capture: "focus" không nổi bọt nhưng vẫn bắt được ở document
+  document.addEventListener("focus", (e) => remember(e.target as Element), true);
+  document.addEventListener("pointerdown", (e) => remember((e.target as Element).closest?.(INTERACTIVE) ?? null), true);
+}
 
 /** Phần tử còn trong trang, ngoài dialog, được focus gần nhất. */
 function recentOutside(container: Element | null): HTMLElement | null {
@@ -33,7 +38,8 @@ function recentOutside(container: Element | null): HTMLElement | null {
  * Radix gắn qua `aria-labelledby` (bấm chuột vào nút mở menu không làm nút nhận focus nên không có trong lịch sử).
  */
 function openerOf(active: Element | null, container: Element | null): HTMLElement | null {
-  if (!(active instanceof HTMLElement) || active === document.body || container?.contains(active)) return null;
+  if (!(active instanceof HTMLElement) || active === document.body || container?.contains(active))
+    return recentOutside(container);
   const menu = active.closest<HTMLElement>(MENU);
   if (!menu) return active;
   return document.getElementById(menu.getAttribute("aria-labelledby") ?? "") ?? recentOutside(container);
@@ -45,7 +51,7 @@ export function useReturnFocus() {
   // Ghi nhận lúc khung dialog gắn vào DOM (không dùng onOpenAutoFocus: Radix KHÔNG phát nó khi trong dialog đã có ô
   // `autoFocus` được focus sẵn). Ref ổn định → chỉ gọi khi mount/unmount; giữ giá trị khi unmount để dùng lúc đóng.
   const ref = useCallback((node: HTMLElement | null) => {
-    if (node) opener.current = openerOf(document.activeElement, node) ?? recentOutside(node);
+    if (node) opener.current = openerOf(document.activeElement, node);
   }, []);
   return {
     ref,

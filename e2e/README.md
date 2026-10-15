@@ -15,18 +15,25 @@ màn legacy `/api/messages/*` (contract map §7).
    ```
 
 3. `cp .env.e2e.example .env.e2e` và điền `QA_PASSWORD` (file bị gitignore; không commit, không dán vào issue/MR).
-4. Trình duyệt: `npx playwright install chromium webkit firefox` (bỏ qua nếu đã có).
+4. Trình duyệt: `npx playwright install chromium webkit firefox` – chạy **trong repo** để tải đúng bản khớp
+   `@playwright/test` của project (CLI toàn cục/bản khác tải build khác, project không dùng được).
 
 ## Chạy
 
 | Lệnh                                                                      | Phạm vi                                                                                                        |
 | :------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------- |
 | `npm run e2e`                                                             | Chromium desktop – toàn bộ test                                                                                |
-| `npm run e2e:matrix`                                                      | + Chrome mobile (Pixel 7), Safari/iOS (WebKit desktop + iPhone 14), Firefox: các test gắn `@cross` / `@mobile` |
+| `npm run e2e:matrix`                                                      | Chromium + Chrome mobile (Pixel 7) + Firefox, rồi `e2e:webkit`: các test gắn `@cross` / `@mobile`             |
+| `npm run e2e:webkit`                                                      | Safari/iOS: WebKit desktop + iPhone 14 (xem lưu ý cookie bên dưới)                                             |
 | `npx playwright test e2e/chat.spec.ts --project=setup --project=chromium` | một file                                                                                                       |
 | `E2E_SERVER=preview npm run e2e`                                          | trên **bản build production** (`vite build` trước; `vite preview` proxy `/api` như dev)                        |
 | `E2E_SERVER=none E2E_BASE_URL=https://staging… E2E_API_URL=… npm run e2e` | staging đã deploy (không tự chạy server)                                                                       |
 | `npm run e2e:report`                                                      | mở báo cáo HTML (trace, ảnh lỗi, báo cáo axe đính kèm)                                                         |
+
+**WebKit và cookie trên http://localhost**: backend Docker (chế độ production) đặt cookie `jwt` với `Secure`; Chromium/Firefox
+coi localhost là ngữ cảnh an toàn nên vẫn gửi, WebKit thì không. Vì vậy khi lệnh chạy WebKit/Safari trên server local qua http,
+config tự cho dev server dùng `VITE_AUTH_TRANSPORT=bearer` (đường site khác / iframe) và không dùng lại server đang chạy;
+staging HTTPS chạy cookie bình thường. Ghi đè bằng `E2E_AUTH_TRANSPORT=cookie|bearer`.
 
 Playwright tự chạy `npm run dev` (kèm `VITE_EMBED_PARENT_ORIGINS=<E2E_HOST_URL>`) và trang host
 `examples/host/serve.mjs`, hoặc dùng lại server đang chạy. Nếu dev server đã chạy **không** có origin trang host trong

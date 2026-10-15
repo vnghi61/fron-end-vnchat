@@ -1,4 +1,6 @@
-@import "tailwindcss";
+/* Chỉ quét class trong src/ – mặc định Tailwind quét cả repo (e2e/, scripts/, docs/…) nên sửa bất kỳ file nào cũng làm
+   dev server reload trang (từng làm hỏng lượt E2E đang chạy). */
+@import "tailwindcss" source(".");
 @import "@fontsource/be-vietnam-pro/vietnamese-400.css";
 @import "@fontsource/be-vietnam-pro/vietnamese-500.css";
 @import "@fontsource/be-vietnam-pro/vietnamese-600.css";

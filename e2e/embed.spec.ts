@@ -38,7 +38,9 @@ const chatFrame = (page: Page, path: string) => {
   return frame;
 };
 const storageOf = (frame: Frame, key: string) => frame.evaluate((k) => localStorage.getItem(k), key);
-const jwtCookies = async (page: Page) => (await page.context().cookies([API, BASE])).filter((c) => c.name === "jwt");
+/** Chỉ trả tên cookie – báo cáo lỗi không bao giờ chứa giá trị token. */
+const jwtCookies = async (page: Page) =>
+  (await page.context().cookies([API, BASE])).filter((c) => c.name === "jwt").map((c) => `${c.name}@${c.domain}`);
 /** Khung bị CSP chặn không chạy script của VNChat → #root trống / không truy cập được. */
 async function rendered(page: Page, prefix: string) {
   const frame = page.frames().find((f) => f !== page.mainFrame() && f.url().startsWith(prefix));
@@ -235,7 +237,7 @@ test.describe("full app in an iframe (/embed) @cross", () => {
   });
 });
 
-test("native WebView bridge (React Native) @mobile", async ({ open }) => {
+test("native WebView bridge (React Native) @mobile", async ({ open, browserName }) => {
   const n = await open(null);
   await n.addInitScript(() => {
     const w = window as unknown as { __native: unknown[]; ReactNativeWebView: { postMessage: (m: string) => void } };
@@ -264,5 +266,13 @@ test("native WebView bridge (React Native) @mobile", async ({ open }) => {
   // đăng nhập trong WebView bằng Bearer, không cookie
   await uiLogin(n, USERS.agent2, null);
   await expect(n).toHaveURL(/\/embed$/);
-  expect(await jwtCookies(n)).toEqual([]);
+  if (browserName === "webkit") {
+    // WebKit vẫn lưu Set-Cookie dù fetch dùng credentials "omit" (contract map B17) – frontend không chặn được; trong
+    // iframe khác site Safari chặn cookie bên thứ ba nên các test nhúng ở trên vẫn kiểm "không cookie".
+    test
+      .info()
+      .annotations.push({ type: "known-issue", description: "B17: WebKit stores Set-Cookie with credentials omit" });
+  } else {
+    expect(await jwtCookies(n)).toEqual([]);
+  }
 });

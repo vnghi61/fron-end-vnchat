@@ -7,8 +7,9 @@
   chat 1-1 (bài kiểm tương đương legacy: realtime, chưa đọc, đang nhập, đã xem, trực tuyến, gửi lại cùng `clientMsgId`,
   khôi phục qua `/api/sync`, phân trang lịch sử), nhóm + thao tác trên tin, bình chọn, nhắc việc, tìm kiếm, hỗ trợ khách
   ↔ nhân viên, quản trị, nhúng cross-site + WebView, điện thoại. Đã chạy xanh trên Chromium desktop, Chrome mobile
-  (Pixel 7) và bản build production (`E2E_SERVER=preview`). Ma trận WebKit (Safari desktop + iPhone 14) và Firefox đã cấu
-  hình nhưng **chưa chạy**: Playwright 1.63 cần bản trình duyệt mới (`npx playwright install webkit firefox`).
+  (Pixel 7), Firefox, WebKit (Safari desktop + iPhone 14) và bản build production thật (`E2E_SERVER=preview` – chế độ này
+  không dùng lại server đang chạy và kiểm không phải dev server). WebKit chạy local bằng transport Bearer vì Safari không
+  gửi cookie `Secure` qua `http://localhost` (backend Docker ở chế độ production).
 - Khả năng tiếp cận: axe-core WCAG 2.1 AA trên 11 màn × sáng/tối (không còn vi phạm serious/critical), bàn phím, bẫy
   focus dialog, giảm chuyển động.
 - Sửa (a11y, WCAG 2.4.3): đóng dialog/sheet/hộp xác nhận mở bằng state hoặc từ menu làm focus rơi về `<body>` – Radix
@@ -19,6 +20,14 @@
 - Hiệu năng & bảo mật bản build: `scripts/check-bundle.mjs` trong `npm run check` – ngân sách gzip (JS ban đầu 248.8/270 KB,
   chunk lớn nhất 152.6/165 KB, loader widget 3.0/4 KB) và quét bí mật trong `dist/` (private key, JWT, `ck_`, chuỗi kết
   nối DB, mật khẩu QA).
+- Phát hiện khi chạy WebKit (contract map B17): Safari/WKWebView vẫn lưu `Set-Cookie: jwt` dù fetch dùng
+  `credentials: "omit"` – iframe/widget trên site đối tác vẫn an toàn (Safari chặn cookie bên thứ ba), rủi ro còn lại khi
+  mở `/widget`, `/embed` trực tiếp trên cùng site; cần backend không đặt cookie cho phiên widget / đăng nhập lấy token.
+- Trả focus cũng đúng trên Safari (nút không nhận focus khi bấm chuột – ghi nhận phần tử vừa được nhấn).
+- Widget trong iframe có loader: thu nhỏ không còn focus nút launcher bên trong iframe đã ẩn (trên WebKit việc này kéo
+  focus khỏi trang host, launcher của host mất focus).
+- Tailwind chỉ quét `src/` (`@import "tailwindcss" source(".")`): trước đây sửa bất kỳ file nào trong repo (CHANGELOG,
+  e2e, scripts) cũng làm dev server reload trang và làm hỏng lượt E2E đang chạy.
 - Ảnh visual chuẩn cho màn tĩnh (đăng nhập sáng/tối, form widget, đăng nhập nhúng trên điện thoại).
 - `vite preview` proxy `/api` như dev; tài liệu: `docs/release-checklist.md` (staging, kiểm tay iOS Safari/Android
   WebView, phát hành, rollback), `docs/migration-notes.md`, `e2e/README.md`.

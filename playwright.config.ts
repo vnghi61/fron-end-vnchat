@@ -6,6 +6,12 @@ import { API, BASE, HOST, isLocal } from "./e2e/env";
 //   npm run e2e:matrix    → + Chrome mobile, Safari/iOS (WebKit), Firefox cho các test gắn @cross / @mobile
 // E2E_SERVER=dev (mặc định) | preview (bản build production) | none (đã chạy sẵn / staging qua E2E_BASE_URL)
 const server = process.env.E2E_SERVER ?? (isLocal ? "dev" : "none");
+// WebKit (Safari) không gửi cookie `Secure` qua http://localhost – backend docker ở chế độ production đặt Secure cho `jwt`.
+// Khi chạy WebKit với server local qua http → dev server dùng transport Bearer (đường của site khác / iframe).
+// Chromium/Firefox giữ cookie. Ghi đè bằng E2E_AUTH_TRANSPORT=cookie|bearer.
+const authTransport =
+  process.env.E2E_AUTH_TRANSPORT ??
+  (BASE.startsWith("http://") && process.argv.some((a) => /webkit|safari/i.test(a)) ? "bearer" : undefined);
 
 const webServer: PlaywrightTestConfig["webServer"] =
   server === "none"
@@ -14,10 +20,11 @@ const webServer: PlaywrightTestConfig["webServer"] =
         {
           command: server === "preview" ? "npm run preview" : "npm run dev",
           url: `${BASE}/login`,
-          reuseExistingServer: true,
+          // preview phải là bản build vừa tạo, transport ép buộc phải đúng → không dùng lại server đang chạy
+          reuseExistingServer: server !== "preview" && !authTransport,
           timeout: 180_000,
           // CSP frame-ancestors + bridge cần origin trang host thử nghiệm
-          env: { VITE_EMBED_PARENT_ORIGINS: HOST },
+          env: { VITE_EMBED_PARENT_ORIGINS: HOST, ...(authTransport ? { VITE_AUTH_TRANSPORT: authTransport } : {}) },
         },
         {
           command: "node examples/host/serve.mjs",

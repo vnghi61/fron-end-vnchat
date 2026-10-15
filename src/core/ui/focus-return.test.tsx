@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -84,6 +84,19 @@ describe("focus return for dialogs opened from state", () => {
     await user.click(opener);
     await vi.waitFor(() => expect(screen.getByLabelText("Ô trong hộp thoại")).toHaveFocus());
     for (let i = 0; i < 15; i += 1) await user.tab(); // nhiều bước focus trong dialog không làm mất phần tử mở
+    await user.keyboard("{Escape}");
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await vi.waitFor(() => expect(opener).toHaveFocus());
+  });
+
+  it("returns focus to a button that did not take focus on click (Safari)", async () => {
+    const user = userEvent.setup();
+    renderUi(<StateDialog />);
+    const opener = screen.getByRole("button", { name: "Mở hộp thoại" });
+    // Safari: bấm chuột vào nút không chuyển focus – chỉ có pointerdown + click
+    fireEvent.pointerDown(opener);
+    fireEvent.click(opener);
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
     await user.keyboard("{Escape}");
     await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     await vi.waitFor(() => expect(opener).toHaveFocus());

@@ -11,6 +11,11 @@ const ALLOWED_CONSOLE = [
   /frame-ancestors/,
   /WebSocket (connection|is closed)/,
   /net::ERR_(FAILED|ABORTED|CONNECTION_REFUSED|INTERNET_DISCONNECTED)/,
+  // Firefox báo websocket bị cắt khi trang chuyển đi (đăng xuất, goto) – không phải lỗi app
+  /can.t establish a connection to the server at ws:/,
+  /was interrupted while the page was loading/,
+  // Firefox: tải font bị huỷ (NS_BINDING_ABORTED) khi khung/trang chuyển đi giữa chừng
+  /downloadable font: download failed .*status=2152398850/,
   /Failed to load resource/,
 ];
 
@@ -58,7 +63,10 @@ export const test = base.extend<{ open: Open; problems: string[] }>({
         if (m.type() === "error" && !ALLOWED_CONSOLE.some((re) => re.test(m.text())))
           problems.push(`[${label}] ${m.text()}`);
       });
-      page.on("pageerror", (e) => problems.push(`[${label} pageerror] ${e.message}`));
+      page.on("pageerror", (e) => {
+        // WebKit báo vòng ResizeObserver (thông báo được dời sang frame sau) là lỗi – không phải lỗi app
+        if (!/ResizeObserver loop/.test(e.message)) problems.push(`[${label} pageerror] ${e.message}`);
+      });
       // API legacy đã gỡ ở Phase 7 (contract map §7) – app không được gọi lại
       page.on("request", (r) => {
         const path = new URL(r.url()).pathname;

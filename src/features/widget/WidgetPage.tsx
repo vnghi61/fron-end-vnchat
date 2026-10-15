@@ -47,7 +47,9 @@ export function WidgetPage() {
     setOpen(next);
     storage.set(OPEN_KEY, next ? "1" : "0", "session");
     if (notify) hostBridge().send({ type: next ? "open" : "close" }); // loader đổi kích thước iframe
-    if (!next) requestAnimationFrame(() => launcherRef.current?.focus());
+    // có loader điều khiển: host ẩn iframe và tự trả focus về launcher của nó – focus nút trong iframe (đã ẩn) sẽ kéo
+    // focus khỏi trang host (WebKit)
+    if (!next && hostBridge().kind !== "iframe") requestAnimationFrame(() => launcherRef.current?.focus());
   };
 
   // theme/locale do loader truyền qua query (data-theme, data-locale) – kiểm tra như message host, không lưu storage

@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { test as setup, expect } from "@playwright/test";
-import { API, authFile, password, USERS, type Who } from "./env";
+import { API, authFile, BASE, password, USERS, type Who } from "./env";
 import { uiLogin } from "./fixtures";
 
 // Kiểm tra môi trường rồi đăng nhập 3 tài khoản QA một lần, lưu phiên (e2e/.auth/*.json – gitignore) cho mọi project.
@@ -9,6 +9,11 @@ setup("environment is ready", async () => {
   for (const [who, email] of Object.entries(USERS)) expect(email, `E2E_USER for ${who}`).toBeTruthy();
   const health = await fetch(`${API}/health`).catch(() => null);
   expect(health?.ok, `backend ${API}/health – chạy docker compose ở back-end-vnchat`).toBe(true);
+  // E2E_SERVER=preview: chắc chắn đang chạy trên bản build production (dev server mới phục vụ /@vite/client)
+  if (process.env.E2E_SERVER === "preview") {
+    const vite = await fetch(`${BASE}/@vite/client`).catch(() => null);
+    expect(vite?.headers.get("content-type") ?? "", "đang chạy dev server thay vì bản build").not.toContain("javascript");
+  }
   mkdirSync("e2e/.auth", { recursive: true });
 });
 
