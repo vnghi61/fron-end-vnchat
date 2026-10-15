@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { paneSizeOf } from "@/core/ui/hooks";
-import { safeNext } from "./navigation";
+import { isEmbeddableRoute, safeNext } from "./navigation";
 
 describe("safeNext (chống open redirect)", () => {
   it.each([
@@ -14,6 +14,32 @@ describe("safeNext (chống open redirect)", () => {
     ["%E0%A4%A", "/app"],
   ])("%s → %s", (input, expected) => {
     expect(safeNext(input)).toBe(expected);
+  });
+
+  it.each([
+    ["/embed/c/123", "/embed/c/123"],
+    ["/embed", "/embed"],
+    ["/embed?x=1", "/embed?x=1"],
+    [encodeURIComponent("/admin/users"), "/embed"],
+    ["/app", "/embed"],
+    ["/embedded-evil", "/embed"],
+    ["//evil.example/embed", "/embed"],
+  ])("trong khung nhúng: %s → %s", (input, expected) => {
+    expect(safeNext(input, "/embed", "/embed")).toBe(expected);
+  });
+});
+
+describe("isEmbeddableRoute", () => {
+  it.each([
+    ["/embed", true],
+    ["/embed/login", true],
+    ["/widget", true],
+    ["/embedded", false],
+    ["/app", false],
+    ["/admin/users", false],
+    ["/support", false],
+  ])("%s → %s", (path, ok) => {
+    expect(isEmbeddableRoute(path)).toBe(ok);
   });
 });
 

@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { qk } from "@/core/api/query";
 import type { Conversation, SupportInfo } from "@/core/api/types";
 import { useSession } from "@/core/auth/session";
@@ -100,14 +100,44 @@ describe("RatingForm", () => {
 });
 
 describe("applySupportUpdated", () => {
+  // room conv không kèm người phụ trách → tải lại hội thoại ngay, kể cả khi không màn nào đang xem (widget thu nhỏ)
+  const assigned = () => ({
+    ...ticket({ status: "agent", assigneeId: OTHER, assignee: { _id: OTHER, name: "Dung", profileImage: "", kind: "user" } }),
+    members: [member(ME, "Bình"), member(OTHER, "Dung")],
+  });
+
   it("patches status from the conversation room and refetches when the assignee changes", async () => {
+    let calls = 0;
+    server.use(http.get("*/api/conversations/s1", () => (calls++, HttpResponse.json(assigned()))));
     const qc = new QueryClient();
     qc.setQueryData(qk.conversation("s1"), ticket());
     applySupportUpdated(qc, { conversationId: "s1", status: "agent", assigneeId: OTHER });
     const c = qc.getQueryData<Conversation>(qk.conversation("s1"));
     expect(c?.support?.status).toBe("agent");
     expect(c?.support?.assigneeId).toBe(OTHER);
-    expect(qc.getQueryState(qk.conversation("s1"))?.isInvalidated).toBe(true);
+    expect(c?.support?.assignee).toBeNull(); // chưa biết tên → banner nói chung chung, không giữ tên cũ
+    await vi.waitFor(() => expect(qc.getQueryData<Conversation>(qk.conversation("s1"))?.support?.assignee?.name).toBe("Dung"));
+    expect(calls).toBe(1);
+  });
+
+  it("keeps the refetched data even if a newer message patches the cache right after", async () => {
+    server.use(http.get("*/api/conversations/s1", () => HttpResponse.json(assigned())));
+    const qc = new QueryClient();
+    qc.setQueryData(qk.conversation("s1"), ticket());
+    applySupportUpdated(qc, { conversationId: "s1", status: "agent", assigneeId: OTHER });
+    // tin mới tới ngay sau đó → setQueryData (trước đây xoá cờ invalidated và giữ dữ liệu cũ tới hết staleTime)
+    qc.setQueryData<Conversation>(qk.conversation("s1"), (c) => (c ? { ...c, lastSeq: c.lastSeq + 1 } : c));
+    await vi.waitFor(() =>
+      expect(qc.getQueryData<Conversation>(qk.conversation("s1"))?.members.map((m) => m.user._id)).toContain(OTHER),
+    );
+  });
+
+  it("takes the assignee name from current members while refetching", () => {
+    server.use(http.get("*/api/conversations/s1", () => HttpResponse.json(assigned())));
+    const qc = new QueryClient();
+    qc.setQueryData(qk.conversation("s1"), { ...ticket(), members: [member(ME, "Bình"), member(OTHER, "Dung")] });
+    applySupportUpdated(qc, { conversationId: "s1", status: "agent", assigneeId: OTHER });
+    expect(qc.getQueryData<Conversation>(qk.conversation("s1"))?.support?.assignee?.name).toBe("Dung");
   });
 
   it("merges only shared fields from the agents-room payload (viewer null, B2)", () => {

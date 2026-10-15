@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
+import { ExternalLink, PanelTop } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Navigate, Outlet, useLocation, useSearchParams } from "react-router-dom";
 import { usePermissions, useSession } from "@/core/auth/session";
-import { safeNext } from "@/core/lib/navigation";
+import { inIframe } from "@/core/embed/bridge";
+import { authBase, isEmbeddableRoute, safeNext } from "@/core/lib/navigation";
+import { Button, EmptyState } from "@/core/ui/components";
 import { FullScreenLoader, ForbiddenPage } from "./pages/status-pages";
 
 /** Chỉ cho vào khi đã đăng nhập; chưa thì về /login?next=<đường dẫn hiện tại>. */
@@ -11,7 +15,7 @@ export function RequireAuth({ children }: { children?: ReactNode }) {
   if (status === "unknown" || status === "loading") return <FullScreenLoader />;
   if (status === "anonymous") {
     const next = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/login?next=${next}`} replace />;
+    return <Navigate to={`${authBase(location.pathname)}/login?next=${next}`} replace />;
   }
   return children ?? <Outlet />;
 }
@@ -20,8 +24,12 @@ export function RequireAuth({ children }: { children?: ReactNode }) {
 export function GuestOnly({ children }: { children?: ReactNode }) {
   const status = useSession((s) => s.status);
   const [params] = useSearchParams();
+  const { pathname } = useLocation();
   if (status === "unknown" || status === "loading") return <FullScreenLoader />;
-  if (status === "authenticated") return <Navigate to={safeNext(params.get("next"))} replace />;
+  if (status === "authenticated") {
+    const base = authBase(pathname);
+    return <Navigate to={base ? safeNext(params.get("next"), base, base) : safeNext(params.get("next"))} replace />;
+  }
   return children ?? <Outlet />;
 }
 
@@ -30,4 +38,31 @@ export function RequirePermission({ permission, children }: { permission: "admin
   const permissions = usePermissions();
   if (!permissions[permission]) return <ForbiddenPage />;
   return children ?? <Outlet />;
+}
+
+/**
+ * Trong iframe chỉ hiển thị /embed và /widget. CSP frame-ancestors chặn việc TẢI các trang khác vào khung, nhưng điều
+ * hướng phía client (link, ?next=, lịch sử) thì không – nên chặn thêm ở đây và mời mở tab mới.
+ */
+export function FrameGuard() {
+  const { t } = useTranslation();
+  const { pathname, search } = useLocation();
+  if (!inIframe || isEmbeddableRoute(pathname)) return <Outlet />;
+  return (
+    <div className="flex h-full items-center justify-center p-4">
+      <EmptyState
+        icon={<PanelTop />}
+        title={t("common.framedTitle")}
+        description={t("common.framedBody")}
+        action={
+          <Button asChild>
+            <a href={pathname + search} target="_blank" rel="noopener noreferrer">
+              <ExternalLink aria-hidden="true" />
+              {t("common.openNewTab")}
+            </a>
+          </Button>
+        }
+      />
+    </div>
+  );
 }

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shop demo – VNChat widget</title>
+    <style>
+      body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: #111827; background: #f9fafb; }
+      main { max-width: 720px; margin: 0 auto; padding: 32px 16px; }
+      code { background: #eef2ff; padding: 2px 6px; border-radius: 4px; }
+      button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; }
+      #log { background: #111827; color: #d1fae5; padding: 12px; border-radius: 8px; min-height: 80px; font: 13px/1.5 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Trang host mẫu (khác site với VNChat)</h1>
+      <p>
+        Widget được thêm bằng một thẻ <code>&lt;script&gt;</code>. Trang này phải nằm trong allowlist của VNChat
+        (<code>VITE_EMBED_PARENT_ORIGINS</code> + CSP <code>frame-ancestors</code>).
+      </p>
+      <p>
+        <button type="button" id="open">VNChat.open()</button>
+        <button type="button" id="dark">setTheme("dark")</button>
+        <button type="button" id="en">setLocale("en")</button>
+      </p>
+      <p>Sự kiện từ widget (<code>VNChat.on</code>):</p>
+      <div id="log" role="log" aria-live="polite"></div>
+      <p><a href="/embed.html">Ví dụ nhúng toàn bộ app (/embed) →</a></p>
+    </main>
+
+    <!-- SDK: chỉ cần thẻ này. data-site-id là nhãn công khai (không phải khoá bí mật). -->
+    <script
+      src="%VNCHAT_ORIGIN%/vnchat-widget.js"
+      async
+      data-site-id="demo-shop"
+      data-theme="system"
+      data-locale="vi"
+      data-placement="bottom-right"
+    ></script>
+    <script>
+      const log = (line) => (document.getElementById("log").textContent += line + "\n");
+      window.addEventListener("load", () => {
+        const api = window.VNChat;
+        if (!api) return log("loader chưa tải được");
+        ["ready", "open", "close", "unread"].forEach((name) => api.on(name, (v) => log(`${name}${v === undefined ? "" : " " + v}`)));
+        document.getElementById("open").onclick = () => api.open();
+        document.getElementById("dark").onclick = () => api.setTheme("dark");
+        document.getElementById("en").onclick = () => api.setLocale("en");
+      });
+    </script>
+  </body>
+</html>

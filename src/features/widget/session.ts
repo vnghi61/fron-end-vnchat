@@ -22,8 +22,21 @@ export async function startVisitorSession(body: { name?: string; email?: string 
   return res;
 }
 
-/** Trang mà khách đang xem (chỉ origin + path, bỏ query/hash) – gửi vào meta.page của yêu cầu hỗ trợ. */
-export function hostPage(): string | undefined {
+/**
+ * meta của yêu cầu hỗ trợ: `page` = trang khách đang xem (chỉ origin + path), `siteId` = nhãn CÔNG KHAI do loader truyền
+ * (data-site-id) để nhân viên biết nguồn – không phải credential (docs/embed-webview-architecture.md §4).
+ */
+export function supportMeta(): Record<string, string> | undefined {
+  const meta: Record<string, string> = {};
+  const page = hostPage();
+  if (page) meta.page = page;
+  const siteId = new URLSearchParams(window.location.search).get("siteId");
+  if (siteId && /^[A-Za-z0-9_-]{1,64}$/.test(siteId)) meta.siteId = siteId;
+  return Object.keys(meta).length ? meta : undefined;
+}
+
+/** Trang mà khách đang xem (chỉ origin + path, bỏ query/hash). */
+function hostPage(): string | undefined {
   try {
     const ref = document.referrer ? new URL(document.referrer) : null;
     if (!ref || ref.origin === window.location.origin) return undefined;

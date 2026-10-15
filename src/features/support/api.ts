@@ -12,6 +12,7 @@ import {
   patchConversation,
   removeFromLists,
 } from "@/features/conversations/cache";
+import { conversationApi } from "@/features/conversations/api";
 import { applyQueueConversation, applyQueueMessage, queueKey, queueParams, type QueueFilter } from "./queue";
 
 // Hỗ trợ khách hàng (§4.10/4.11 tài liệu backend). Phía khách: mở / đóng / đánh giá. Phía nhân viên (support:write):
@@ -127,15 +128,28 @@ export function applySupportUpdated(qc: QueryClient, p: SupportUpdated) {
     applyQueueConversation(qc, p.conversation, me);
   } else {
     const before = findConversation(qc, p.conversationId);
+    const assigneeChanged = !!before?.support && before.support.assigneeId !== p.assigneeId;
+    // tạm lấy tên từ danh sách thành viên đang có; không có → null (banner nói chung chung) thay vì giữ tên cũ
+    const assignee = assigneeChanged
+      ? (before.members.find((m) => m.user._id === p.assigneeId)?.user ?? null)
+      : undefined;
     patchSupport(qc, p.conversationId, {
       status: p.status,
       assigneeId: p.assigneeId,
+      ...(assignee !== undefined ? { assignee } : {}),
       ...(p.tags ? { tags: p.tags } : {}),
       ...(p.rating !== undefined ? { rating: p.rating } : {}),
     });
-    // room conv: không kèm thông tin người phụ trách → lấy lại để hiện tên
-    if (before?.support && before.support.assigneeId !== p.assigneeId)
-      void qc.invalidateQueries({ queryKey: qk.conversation(p.conversationId) });
+    // room conv không kèm người phụ trách/thành viên mới → tải lại NGAY, kể cả khi không màn nào đang xem (widget thu
+    // nhỏ): chỉ invalidate thì setQueryData kế tiếp (tin mới) sẽ xoá cờ invalidated và dữ liệu cũ sống tiếp staleTime.
+    if (assigneeChanged)
+      void qc
+        .fetchQuery({
+          queryKey: qk.conversation(p.conversationId),
+          queryFn: () => conversationApi.get(p.conversationId),
+          staleTime: 0,
+        })
+        .catch(() => undefined);
   }
   soon("stats", () => void qc.invalidateQueries({ queryKey: qk.supportStats }));
 }

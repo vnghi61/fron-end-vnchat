@@ -1,13 +1,14 @@
 import type { ComponentType } from "react";
-import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router-dom";
-import { GuestOnly, RequireAuth, RequirePermission } from "./guards";
+import { createBrowserRouter, Navigate, type RouteObject } from "react-router-dom";
+import { FrameGuard, GuestOnly, RequireAuth, RequirePermission } from "./guards";
 import { FullScreenLoader, NotFoundPage, RouteErrorPage } from "./pages/status-pages";
 import { AdminShell } from "./shells/AdminShell";
 import { AgentShell } from "./shells/AgentShell";
+import { EmbedRoot } from "./shells/EmbedRoot";
 import { AppShell } from "./shells/AppShell";
 
 // Route frontend (KHÔNG phải endpoint backend): /app (full), /compact (WebView/iframe hẹp), /login, /signup.
-// /support (console hỗ trợ), /admin (quản trị), /widget (khách); /embed thêm ở Phase 6. Trang tách chunk (lazy) để màn chat tải nhanh.
+// /support (console hỗ trợ), /admin (quản trị), /widget (khách), /embed (iframe đối tác). Trang tách chunk (lazy) để màn chat tải nhanh.
 
 const page =
   <M extends Record<string, unknown>>(load: () => Promise<M>, name: keyof M & string) =>
@@ -41,11 +42,29 @@ const memberRoutes = (base: string): RouteObject[] => [
 
 export const routes: RouteObject[] = [
   {
-    element: <Outlet />,
+    element: <FrameGuard />,
     errorElement: <RouteErrorPage />,
     HydrateFallback: FullScreenLoader,
     children: [
       { path: "/", element: <Navigate to="/app" replace /> },
+      // App nhúng iframe (màn 25): đăng nhập ngay trong khung (Bearer, transport cách ly – main.tsx)
+      {
+        path: "/embed",
+        element: <EmbedRoot />,
+        children: [
+          {
+            element: <GuestOnly />,
+            children: [
+              { path: "login", lazy: page(() => import("@/features/auth/LoginPage"), "LoginPage") },
+              { path: "signup", lazy: page(() => import("@/features/auth/SignupPage"), "SignupPage") },
+            ],
+          },
+          {
+            element: <RequireAuth />,
+            children: [{ element: <AppShell variant="embed" base="/embed" />, children: memberRoutes("/embed") }],
+          },
+        ],
+      },
       // Widget khách: không cần đăng nhập thành viên, transport cách ly (main.tsx)
       { path: "/widget", lazy: page(() => import("@/features/widget/WidgetPage"), "WidgetPage") },
       {

@@ -1,7 +1,16 @@
 import { Fragment, type ReactNode } from "react";
+import { hostBridge } from "@/core/embed/bridge";
 
 // Nội dung tin là text thuần → React tự escape. Chỉ biến URL http(s) thành link (mở tab mới, noopener) và tô đậm
 // "@Tên" của người được nhắc. Không bao giờ dùng dangerouslySetInnerHTML.
+
+/** WebView native thường không mở được target=_blank → nhờ host mở (navigate:external), host tự quyết định. */
+function openExternal(e: React.MouseEvent<HTMLAnchorElement>) {
+  const bridge = hostBridge();
+  if (bridge.kind !== "native") return;
+  e.preventDefault();
+  bridge.send({ type: "navigate:external", url: e.currentTarget.href });
+}
 
 const URL_RE = /\bhttps?:\/\/[^\s<>"')\]]+[^\s<>"')\].,;:!?]/gi;
 
@@ -13,7 +22,7 @@ export function renderRichText(text: string, mentionNames: string[], linkClass: 
     if (start > last) out.push(...renderMentions(text.slice(last, start), mentionNames, out.length));
     const url = match[0];
     out.push(
-      <a key={`u${start}`} href={url} target="_blank" rel="noopener noreferrer" className={linkClass}>
+      <a key={`u${start}`} href={url} target="_blank" rel="noopener noreferrer" className={linkClass} onClick={openExternal}>
         {url}
       </a>,
     );

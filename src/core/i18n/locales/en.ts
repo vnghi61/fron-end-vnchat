@@ -31,6 +31,9 @@ export const en: Messages = {
     errorTitle: "Something went wrong",
     errorBody: "Please reload the page. If it keeps happening, try again later.",
     reload: "Reload page",
+    framedTitle: "This page can't be opened inside an embedded frame",
+    framedBody: "For your safety, this page only works in its own VNChat window.",
+    openNewTab: "Open in a new tab",
   },
   auth: {
     loginTitle: "Sign in",

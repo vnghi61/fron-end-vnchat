@@ -1,7 +1,24 @@
 import { fileURLToPath, URL } from "node:url";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, type Connect, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+
+// CSP frame-ancestors giống cấu hình deploy (deploy/README.md): chỉ /embed/* và /widget được nhúng bởi origin trong
+// allowlist, mọi route khác chỉ 'self' (chống clickjacking). Áp cho cả dev và `vite preview` để kiểm thử nhúng cross-site.
+function frameAncestors(origins: string[]): Plugin {
+  const allowed = origins.filter((o) => /^https?:\/\/[^/\s*]+$/.test(o));
+  const policy = (url: string) =>
+    /^\/(embed|widget)(\/|\?|$)/.test(url) ? ["frame-ancestors 'self'", ...allowed].join(" ") : "frame-ancestors 'self'";
+  const middleware: Connect.NextHandleFunction = (req, res, next) => {
+    res.setHeader("Content-Security-Policy", policy(req.url ?? "/"));
+    next();
+  };
+  return {
+    name: "vnchat-frame-ancestors",
+    configureServer: (server) => void server.middlewares.use(middleware),
+    configurePreviewServer: (server) => void server.middlewares.use(middleware),
+  };
+}
 
 // Dev: chạy cổng 5174 (backend chỉ cho CORS http://localhost:5174 mặc định) và proxy /api + /socket.io tới backend
 // để cookie jwt là first-party. Production: VITE_API_URL trỏ tới API (rỗng = cùng origin).
@@ -9,7 +26,11 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const target = env.VITE_DEV_API_TARGET || "http://localhost:5001";
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      frameAncestors((env.VITE_EMBED_PARENT_ORIGINS ?? "").split(",").map((s) => s.trim())),
+    ],
     resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
     server: {
       port: 5174,

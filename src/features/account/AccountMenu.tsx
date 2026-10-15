@@ -14,7 +14,7 @@ import {
 } from "@/core/ui/components";
 import { toast } from "@/core/ui/toast";
 import { useTheme, type ThemePreference } from "@/core/ui/theme";
-import { useShellPath } from "@/core/ui/shell";
+import { useShell, useShellPath } from "@/core/ui/shell";
 import { startSupport } from "@/features/support/api";
 
 export function AccountMenu({ side = "right" }: { side?: "right" | "top" | "bottom" }) {
@@ -25,6 +25,10 @@ export function AccountMenu({ side = "right" }: { side?: "right" | "top" | "bott
   const qc = useQueryClient();
   const navigate = useNavigate();
   const to = useShellPath();
+  const { variant } = useShell();
+  // Console/Quản trị không được phép nằm trong khung (CSP frame-ancestors 'self') → trong /embed mở tab mới
+  const openArea = (path: string) =>
+    variant === "embed" ? window.open(path, "_blank", "noopener,noreferrer") : navigate(path);
   const { preference, setPreference } = useTheme();
   if (!me) return null;
 
@@ -80,12 +84,12 @@ export function AccountMenu({ side = "right" }: { side?: "right" | "top" | "bott
         )}
         {(permissions.agent || permissions.admin) && <DropdownMenuSeparator />}
         {permissions.agent && (
-          <DropdownMenuItem icon={<Headset />} onSelect={() => navigate("/support")}>
+          <DropdownMenuItem icon={<Headset />} onSelect={() => openArea("/support")}>
             {t("nav.agentConsole")}
           </DropdownMenuItem>
         )}
         {permissions.admin && (
-          <DropdownMenuItem icon={<Shield />} onSelect={() => navigate("/admin")}>
+          <DropdownMenuItem icon={<Shield />} onSelect={() => openArea("/admin")}>
             {t("nav.admin")}
           </DropdownMenuItem>
         )}

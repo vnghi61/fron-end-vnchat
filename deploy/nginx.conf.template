@@ -1,0 +1,37 @@
+# VNChat web – nginx (static). EMBED_FRAME_ANCESTORS: các origin đối tác cách nhau bởi dấu cách,
+# phải khớp VITE_EMBED_PARENT_ORIGINS lúc build.
+server {
+  listen 80;
+  server_name _;
+  root /usr/share/nginx/html;
+
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+  # Nhúng được: /embed, /embed/*, /widget
+  location ~ ^/(embed(/.*)?|widget)$ {
+    add_header Content-Security-Policy "frame-ancestors 'self' ${EMBED_FRAME_ANCESTORS}" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    try_files $uri /index.html;
+  }
+
+  # Loader nhúng trên site đối tác: cache ngắn
+  location = /vnchat-widget.js {
+    add_header Cache-Control "public, max-age=300";
+    add_header X-Content-Type-Options "nosniff" always;
+  }
+
+  # File có hash
+  location /assets/ {
+    add_header Cache-Control "public, max-age=31536000, immutable";
+    add_header X-Content-Type-Options "nosniff" always;
+  }
+
+  # Mọi route khác: không cho nhúng (chống clickjacking)
+  location / {
+    add_header Content-Security-Policy "frame-ancestors 'self'" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    try_files $uri /index.html;
+  }
+}

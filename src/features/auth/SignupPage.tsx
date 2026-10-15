@@ -2,12 +2,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { isApiError } from "@/core/api/errors";
 import { useSession } from "@/core/auth/session";
 import { errorMessage } from "@/core/i18n";
 import { applyServerErrors } from "@/core/lib/forms";
+import { authBase } from "@/core/lib/navigation";
 import { Button, Field, Input } from "@/core/ui/components";
 import { AuthLayout, FormAlert } from "./AuthLayout";
 import { PasswordInput } from "./PasswordInput";
@@ -52,6 +53,7 @@ export function SignupPage() {
 
   const msg = (m?: string) => (m ? (m.startsWith("auth.") ? t(m as MsgKey) : m) : undefined);
   const next = params.get("next");
+  const base = authBase(useLocation().pathname);
 
   return (
     <AuthLayout
@@ -61,7 +63,7 @@ export function SignupPage() {
         <>
           {t("auth.haveAccount")}{" "}
           <Link
-            to={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}
+            to={next ? `${base}/login?next=${encodeURIComponent(next)}` : `${base}/login`}
             className="font-medium text-primary-strong hover:underline"
           >
             {t("auth.toLogin")}

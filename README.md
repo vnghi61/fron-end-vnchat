@@ -16,6 +16,9 @@ npm run dev                         # http://localhost:5174 – proxy /api, /soc
 Backend: trong repo `back-end-vnchat` chạy `docker compose up -d --build` (API :5001 + MongoDB).
 Backend chỉ cho CORS `http://localhost:5174` mặc định – vì vậy dev server cố định cổng 5174.
 
+Thử nhúng cross-site: thêm `VITE_EMBED_PARENT_ORIGINS=http://127.0.0.1:5180` vào `.env.development.local`, chạy
+`node examples/host/serve.mjs` rồi mở `http://127.0.0.1:5180` (widget) hoặc `/embed.html` (app đầy đủ).
+
 ## Lệnh
 
 | Lệnh | Việc |
@@ -31,6 +34,8 @@ Backend chỉ cho CORS `http://localhost:5174` mặc định – vì vậy dev s
 - [docs/ui-vnchat-2-design-system.md](docs/ui-vnchat-2-design-system.md) – token, theme, typography, responsive, a11y
 - [docs/frontend-backend-contract-map.md](docs/frontend-backend-contract-map.md) – màn hình ↔ API/event, blocker backend
 - [docs/embed-webview-architecture.md](docs/embed-webview-architecture.md) – iframe, widget, WebView, bridge postMessage
+- [deploy/README.md](deploy/README.md) – deploy static + header `frame-ancestors` (nginx, Render)
+- [examples/host/README.md](examples/host/README.md) – mẫu tích hợp: widget, iframe `/embed`, WebView Android/iOS/React Native
 
 ## Cấu trúc
 

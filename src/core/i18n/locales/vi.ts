@@ -32,6 +32,9 @@ export const vi = {
     errorTitle: "Đã có lỗi xảy ra",
     errorBody: "Vui lòng tải lại trang. Nếu lỗi tiếp diễn, hãy thử lại sau.",
     reload: "Tải lại trang",
+    framedTitle: "Không mở được trang này trong khung nhúng",
+    framedBody: "Vì an toàn, trang này chỉ dùng trong cửa sổ VNChat riêng.",
+    openNewTab: "Mở trong tab mới",
   },
   auth: {
     loginTitle: "Đăng nhập",

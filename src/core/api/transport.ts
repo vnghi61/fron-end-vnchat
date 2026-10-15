@@ -17,6 +17,8 @@ export const transport = {
 };
 
 export const WIDGET_TOKEN_SCOPE: TokenScope = { key: "vnchat.widget.token", area: "local", keep: true };
+/** App nhúng trong iframe (/embed, hoặc bất kỳ trang nào khi nằm trong khung): cookie bên thứ ba không dùng được. */
+export const EMBED_TOKEN_SCOPE: TokenScope = { key: "vnchat.embed.token", area: "local", keep: true };
 
 /** Gọi một lần trước request đầu tiên của tài liệu (main.tsx). */
 export function isolateSession(scope: TokenScope) {

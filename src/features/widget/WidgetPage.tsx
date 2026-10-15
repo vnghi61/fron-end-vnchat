@@ -12,6 +12,8 @@ import { errorMessage } from "@/core/i18n";
 import { applyServerErrors } from "@/core/lib/forms";
 import { storage } from "@/core/lib/storage";
 import { formatShortTime } from "@/core/lib/time";
+import { applyHostPreference, hostBridge, inIframe, useHostMessages } from "@/core/embed/bridge";
+import { parseHostMessage } from "@/core/embed/protocol";
 import { useConnection } from "@/core/realtime/socket";
 import { Button, EmptyState, Field, IconButton, Input, Spinner, Textarea } from "@/core/ui/components";
 import { useContainerSize } from "@/core/ui/hooks";
@@ -25,33 +27,53 @@ import { MessageFeed } from "@/features/messages/MessageFeed";
 import { TypingIndicator } from "@/features/messages/TypingIndicator";
 import { startSupport, useMySupport } from "@/features/support/api";
 import { SupportBanner } from "@/features/support/SupportBanner";
-import { hostPage, startVisitorSession, visitorToken } from "./session";
+import { startVisitorSession, supportMeta, visitorToken } from "./session";
 
 // Widget hỗ trợ cho khách (màn 15): launcher ↔ panel. Tài liệu này chạy transport cách ly (main.tsx) nên phiên khách
 // không đụng tới phiên thành viên. Khi nằm trong iframe (Phase 6 – loader điều khiển kích thước), panel lấp đầy iframe.
 
 const OPEN_KEY = "vnchat.widget.open";
 
-const embedded = (() => {
-  try {
-    return window.self !== window.top;
-  } catch {
-    return true;
-  }
-})();
+const embedded = inIframe;
+const query = new URLSearchParams(window.location.search);
 
 export function WidgetPage() {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(
-    () => new URLSearchParams(window.location.search).get("open") === "1" || storage.get(OPEN_KEY, "session") === "1",
-  );
+  const [open, setOpen] = useState(() => query.get("open") === "1" || storage.get(OPEN_KEY, "session") === "1");
   const launcherRef = useRef<HTMLButtonElement>(null);
+  const unread = useSession((s) => s.bootstrap?.unreadTotal ?? null);
 
-  const toggle = (next: boolean) => {
+  const toggle = (next: boolean, notify = true) => {
     setOpen(next);
     storage.set(OPEN_KEY, next ? "1" : "0", "session");
+    if (notify) hostBridge().send({ type: next ? "open" : "close" }); // loader đổi kích thước iframe
     if (!next) requestAnimationFrame(() => launcherRef.current?.focus());
   };
+
+  // theme/locale do loader truyền qua query (data-theme, data-locale) – kiểm tra như message host, không lưu storage
+  useEffect(() => {
+    for (const msg of [
+      { source: "vnchat-host", v: 1, type: "theme:set", theme: query.get("theme") },
+      { source: "vnchat-host", v: 1, type: "locale:set", locale: query.get("locale") },
+    ]) {
+      const parsed = parseHostMessage(msg);
+      if (parsed) applyHostPreference(parsed);
+    }
+    hostBridge().send({ type: "ready" });
+    if (open) hostBridge().send({ type: "open" });
+    // chỉ một lần khi tải
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (unread !== null) hostBridge().send({ type: "unread:change", count: unread });
+  }, [unread]);
+
+  useHostMessages((msg) => {
+    // host yêu cầu → đổi trạng thái nhưng không báo ngược lại (tránh vòng lặp open/close)
+    if (msg.type === "open" || msg.type === "close") toggle(msg.type === "open", false);
+    else if (msg.type !== "navigate") applyHostPreference(msg);
+  });
 
   return (
     <div className="h-full w-full bg-transparent">
@@ -86,8 +108,13 @@ function WidgetPanel({ onMinimize }: { onMinimize: () => void }) {
     () => ({ variant: "embed", size: size === "xlarge" ? "large" : size, base: "/widget" }),
     [size],
   );
-  const [unavailable, setUnavailable] = useState(false);
+  const [unavailable, setUnavailableState] = useState(false);
   const resumed = useRef(false);
+  // Widget bị tắt (CHAT-403-001) → loader ẩn hẳn launcher
+  const setUnavailable = (value: boolean) => {
+    setUnavailableState(value);
+    if (value) hostBridge().send({ type: "hide" });
+  };
 
   // Khách cũ (còn visitorToken) mà token phiên hết hạn → tự lấy phiên mới, giữ nguyên lịch sử.
   useEffect(() => {
@@ -184,8 +211,7 @@ function VisitorForm({ onUnavailable }: { onUnavailable: () => void }) {
     setFormError(null);
     try {
       await startVisitorSession({ name: v.name || undefined, email: v.email || undefined });
-      const page = hostPage();
-      await startSupport(qc, { text: v.message || undefined, meta: page ? { page } : undefined });
+      await startSupport(qc, { text: v.message || undefined, meta: supportMeta() });
     } catch (error) {
       if (isApiError(error, "CHAT-403-001")) return onUnavailable();
       setFormError(applyServerErrors(error, setError, ["name", "email"]));
@@ -239,8 +265,7 @@ function WidgetHome({ onUnavailable }: { onUnavailable: () => void }) {
   const start = async () => {
     setStarting(true);
     try {
-      const page = hostPage();
-      const c = await startSupport(qc, { meta: page ? { page } : undefined });
+      const c = await startSupport(qc, { meta: supportMeta() });
       setViewing(c._id);
     } catch (error) {
       if (isApiError(error, "CHAT-403-001")) onUnavailable();

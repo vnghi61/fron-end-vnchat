@@ -2,6 +2,30 @@
 
 ## [Unreleased] – VNChat 2.0
 
+### Phase 6 – Embed & WebView
+- Bridge v1 (`src/core/embed`): kiểm tra origin (allowlist `VITE_EMBED_PARENT_ORIGINS`, `ancestorOrigins` → referrer) +
+  `event.source` + shape từng message; gửi `postMessage` với targetOrigin cụ thể; `ready` một lần, `resize` gộp theo
+  frame; theme/ngôn ngữ do host đặt không ghi đè lựa chọn đã lưu. Bridge native cho WKWebView / Android / React Native
+  (`window.vnchatHost.receive`), link ngoài đi qua `navigate:external`.
+- App đầy đủ trong iframe `/embed` (màn 25): đăng nhập/đăng ký ngay trong khung (`/embed/login`, giữ `?next=` an toàn),
+  mọi link giữ tiền tố `/embed`, báo `unread:change` cho host, nhận `navigate` / `theme:set` / `locale:set` /
+  `viewport:set`; Console hỗ trợ / Quản trị mở tab mới.
+- Mọi trang chạy trong iframe dùng transport cách ly như widget: Bearer token riêng `vnchat.embed.token`, fetch
+  `credentials: "omit"` – không gửi/lưu cookie, không đè phiên standalone.
+- Giữ app trong khu nhúng: `?next=` của `/embed/login` chỉ nhận đường dẫn dưới `/embed`; trong iframe, route ngoài
+  `/embed`/`/widget` hiện "Mở trong tab mới" (`FrameGuard`) – CSP không chặn được điều hướng phía client.
+- Loader `public/vnchat-widget.js` (vanilla): launcher vẽ trên trang host, iframe `/widget` chỉ tạo khi mở lần đầu, badge
+  chưa đọc, toàn màn hình dưới 480px, API `VNChat.open/close/setTheme/setLocale/on`, ẩn hẳn khi widget bị tắt (`hide`).
+- CSP `frame-ancestors` theo route: dev server + `vite preview` (plugin trong `vite.config.ts`), mẫu deploy nginx +
+  Render (`deploy/`).
+- Mẫu tích hợp `examples/host` (trang host khác site cho widget và `/embed`, đoạn mã Android/iOS/React Native).
+- Sửa: mở lại widget sau khi thu nhỏ vẫn hiện "Nhân viên đang hỗ trợ bạn"/"Ai đó…" thay vì tên nhân viên – khi
+  `support.updated` đổi người phụ trách, hội thoại được tải lại ngay kể cả khi không màn nào đang xem.
+- Kiểm thử: unit giao thức (shape, route, origin, URL ngoài, hỗ trợ đổi người phụ trách) + kịch bản Chromium cross-site
+  với backend thật (CSP theo route, loader, phiên khách không cookie, badge chưa đọc khi nhân viên trả lời, đăng nhập
+  trong `/embed`, lệnh host, message giả từ origin lạ bị bỏ, host ngoài allowlist bị chặn, WebView native giả lập).
+  Safari/iOS, Android WebView thật và trình duyệt chặn cookie bên thứ ba còn ở Phase 7.
+
 ### Phase 5 – Administration
 - Khu quản trị `/admin` (vào khi `permissions.admin`), điều hướng dọc khi rộng / cuộn ngang khi hẹp. Mỗi mục có object
   quyền riêng ở backend nên mục nào trả 403 thì hiện "không có quyền xem mục này" thay vì lỗi (B3).
